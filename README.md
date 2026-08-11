@@ -173,12 +173,17 @@ Run the deterministic 80-case Evaluation MVP without loading a model:
 
 ```bash
 python scripts/run_evaluation.py
+python scripts/review_evaluation_labels.py
 ```
 
 The current component baseline reports 1.000 emergency recall, 0.0909
 emergency false-positive rate, and 0.625 Retrieval Recall@3 on synthetic,
 project-reviewed cases. These are not clinical-performance claims. See the
 [Evaluation MVP methodology and limitations](docs/evaluation-mvp.md).
+Evaluation v1 also defines a provider-neutral, privacy-safe prediction
+contract for captured Qwen or OpenAI outputs. See the bilingual
+[Evaluation v1 contract](docs/evaluation-v1.md). No model is called unless a
+separate capture workflow is deliberately run.
 
 ## Product case and upgrade plan
 
@@ -189,6 +194,8 @@ project-reviewed cases. These are not clinical-performance claims. See the
   deployment.
 - [Evaluation MVP](docs/evaluation-mvp.md): dataset design, baseline results,
   observed failures, and unmeasured metrics.
+- [Evaluation v1](docs/evaluation-v1.md): bilingual prediction contract,
+  end-to-end proxy metrics, label-review gate, and privacy rules.
 
 ## Project layout
 
@@ -211,8 +218,9 @@ tests/                          Automated tests
 
 ## Roadmap
 
-The next milestone is a reproducible evaluation harness, followed by a measured
-comparison of retrieval strategies. See the
+The next milestone is a reviewed local-Qwen prediction run through the
+provider-neutral Evaluation v1 contract. Brand migration follows that gate,
+before the measured comparison of retrieval strategies. See the
 [checkable portfolio roadmap](docs/portfolio-upgrade-roadmap.md) for priorities,
 acceptance criteria, and timeline.
 

@@ -78,11 +78,15 @@ instead of being inferred from unit tests.
 
 ## Next increment
 
-1. Add a provider-prediction JSONL contract without coupling the evaluator to a
-   specific model vendor.
-2. Capture planner decisions, returned evidence IDs, answer text, model calls,
-   token usage, latency, and errors.
-3. Add deterministic route, citation, prohibited-claim, and completion checks.
-4. Add judge-based groundedness as a separately labelled experimental metric.
-5. Expand from 80 to 150 cases only after expert review of the schema, labels,
-   failure taxonomy, and current hard negatives.
+1. **Completed:** add a provider-prediction JSONL contract without coupling the
+   evaluator to a specific model vendor.
+2. **Completed:** add deterministic route, source, prohibited-claim, literal
+   concept, completion, call, token, latency, and cost scoring.
+3. **Completed:** add a label-consistency report; all 80 cases pass structural
+   checks and remain explicitly pending qualified human review.
+4. **Next:** capture a full local-Qwen prediction run, analyse failures, and
+   freeze reviewed regression thresholds.
+5. **Later:** add judge-based groundedness as a separately labelled
+   experimental metric and expand to 150 cases only after label review.
+
+See the bilingual [Evaluation v1 prediction contract](evaluation-v1.md).

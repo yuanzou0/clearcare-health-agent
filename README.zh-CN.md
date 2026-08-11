@@ -151,11 +151,15 @@ pytest
 
 ```bash
 python scripts/run_evaluation.py
+python scripts/review_evaluation_labels.py
 ```
 
 当前组件基线在合成、项目内审核的数据上得到：急症召回率 1.000、急症误报率
 0.0909、Retrieval Recall@3 为 0.625。这些不是临床性能结论。方法、失败样例和
 限制见 [Evaluation MVP 文档](docs/evaluation-mvp.md)。
+Evaluation v1 还定义了与 Provider 无关、隐私安全的预测协议，可用于已经捕获的
+Qwen 或 OpenAI 输出；详见双语 [Evaluation v1 文档](docs/evaluation-v1.md)。除非
+单独明确运行模型捕获流程，否则上述命令不会调用模型。
 
 ## 产品案例与升级计划
 
@@ -165,6 +169,8 @@ python scripts/run_evaluation.py
   实验、数据分析、Skills 与部署的日期、勾选状态和验收标准。
 - [Evaluation MVP（英文）](docs/evaluation-mvp.md)：数据集设计、基线结果、已发现
   的失败与尚未测量的指标。
+- [Evaluation v1（中英双语）](docs/evaluation-v1.md)：模型预测协议、端到端代理
+  指标、标签审核门槛与隐私规则。
 
 ## 主要文件
 
@@ -187,8 +193,9 @@ tests/                          自动化测试
 
 ## 后续路线
 
-下一里程碑是可复现的 Evaluation Harness，随后才是在同一冻结评测集上比较
-多种检索方案。优先级、验收标准和时间线见
+下一里程碑是让本地 Qwen 通过 Provider-neutral Evaluation v1 协议完成一次经
+复核的预测运行。达到该门槛后进行品牌迁移，再在同一冻结评测集上比较多种
+检索方案。优先级、验收标准和时间线见
 [可勾选作品集路线图](docs/portfolio-upgrade-roadmap.md)。
 
 ## 许可证

@@ -52,8 +52,13 @@ which evidence supports each product decision.**
   failure taxonomy.
 - [x] Implement deterministic component checks for emergency routing, retrieval,
   citation-ID validity, and in-process latency.
-- [ ] Extend deterministic checks to planner routing, refusal/non-diagnosis
-  behavior, model-call count, and provider latency.
+- [x] Add a provider-neutral prediction contract and deterministic scoring for
+  planner routing, completion, prohibited claims, sources, model calls, tokens,
+  provider latency, and estimated cost.
+- [ ] Capture and review a complete local-Qwen prediction run before setting
+  end-to-end regression thresholds.
+- [x] Run deterministic label-consistency review; keep all 80 cases marked as
+  pending qualified human review.
 - [ ] Add judge-based groundedness scoring as a separate, clearly labelled
   metric; never use it as the only safety evaluator.
 - [x] Generate a reproducible Markdown and JSON evaluation report.

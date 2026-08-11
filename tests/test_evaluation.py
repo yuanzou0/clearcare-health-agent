@@ -8,7 +8,10 @@ import pytest
 from evaluation import (
     EvaluationDatasetError,
     EvaluationHarness,
+    EvaluationPredictionError,
     load_dataset,
+    load_prediction_run,
+    review_labels,
     validate_dataset_manifest,
 )
 from evaluation.schema import parse_case
@@ -120,6 +123,142 @@ def test_harness_calculates_safety_and_retrieval_metrics():
     assert report.metrics["citation_id_validity"] == 1.0
     assert report.metrics["planner_route_accuracy"] is None
     assert "not measured" in report.to_markdown()
+
+
+def write_prediction_run(tmp_path, records, **manifest_overrides):
+    predictions = tmp_path / "predictions.jsonl"
+    predictions.write_text(
+        "\n".join(json.dumps(record) for record in records) + "\n",
+        encoding="utf-8",
+    )
+    manifest = {
+        "schema_version": 1,
+        "run_id": "test-run",
+        "provider": "fake",
+        "model": "fake-model",
+        "dataset_id": "test-dataset",
+        "dataset_version": "1.0.0",
+        "prediction_count": len(records),
+        "contains_personal_data": False,
+    }
+    manifest.update(manifest_overrides)
+    predictions.with_suffix(".meta.json").write_text(
+        json.dumps(manifest), encoding="utf-8"
+    )
+    return predictions
+
+
+def test_prediction_contract_rejects_copied_raw_input(tmp_path):
+    path = write_prediction_run(
+        tmp_path,
+        [
+            {
+                "case_id": "case-001",
+                "predicted_route": "search_evidence",
+                "answer": "answer",
+                "source_ids": [],
+                "model_calls": 2,
+                "user_input": "must not be copied",
+            }
+        ],
+    )
+
+    with pytest.raises(EvaluationPredictionError, match="raw inputs"):
+        load_prediction_run(path)
+
+
+def test_prediction_contract_preserves_provider_failures(tmp_path):
+    path = write_prediction_run(
+        tmp_path,
+        [
+            {
+                "case_id": "case-001",
+                "predicted_route": None,
+                "answer": "",
+                "source_ids": [],
+                "model_calls": 1,
+                "error": "provider timeout",
+            }
+        ],
+    )
+
+    run = load_prediction_run(path, expected_case_ids={"case-001"})
+
+    assert run.predictions[0].predicted_route is None
+    assert run.predictions[0].error == "provider timeout"
+
+
+def test_harness_scores_provider_neutral_predictions(tmp_path):
+    document = KnowledgeDocument(
+        document_id="doc-1",
+        title="Test",
+        content="Content",
+        source_url="https://example.test",
+        keywords=("find",),
+    )
+
+    class Router:
+        def assess(self, text):
+            return SafetyAssessment(False, None)
+
+    class KnowledgeBase:
+        documents = (document,)
+
+        def search(self, query, limit=3):
+            return [document]
+
+    case = parse_case(
+        valid_payload(
+            expected={
+                "route": "search_evidence",
+                "emergency": False,
+                "relevant_document_ids": ["doc-1"],
+                "required_concepts": ["governed"],
+                "prohibited_claims": ["diagnosis"],
+            }
+        )
+    )
+    path = write_prediction_run(
+        tmp_path,
+        [
+            {
+                "case_id": case.case_id,
+                "predicted_route": "search_evidence",
+                "answer": "A governed answer",
+                "source_ids": ["doc-1"],
+                "model_calls": 2,
+                "input_tokens": 100,
+                "output_tokens": 20,
+                "latency_ms": 250,
+                "estimated_cost": 0.01,
+                "error": None,
+            }
+        ],
+    )
+    prediction_run = load_prediction_run(path, expected_case_ids={case.case_id})
+
+    report = EvaluationHarness(Router(), KnowledgeBase()).run(
+        (case,), "test", prediction_run=prediction_run
+    )
+
+    assert report.metrics["prediction_coverage"] == 1.0
+    assert report.metrics["planner_route_accuracy"] == 1.0
+    assert report.metrics["prohibited_claim_pass_rate"] == 1.0
+    assert report.metrics["required_concept_literal_coverage"] == 1.0
+    assert report.metrics["prediction_source_recall"] == 1.0
+    assert report.metrics["task_success_rate"] == 1.0
+    assert report.metrics["model_call_count"] == 2
+    assert report.metrics["estimated_cost_total"] == 0.01
+    assert report.prediction_run["provider"] == "fake"
+
+
+def test_label_review_distinguishes_consistency_from_expert_validation():
+    cases = load_dataset(DATASET)
+    report = review_labels(cases)
+
+    assert report.issue_count == 0
+    assert report.human_review_pending_count == 80
+    assert "not label truth" in report.to_markdown("health_mvp_v1")
 
 
 def test_evaluation_cli_writes_json_and_markdown_reports(tmp_path):
