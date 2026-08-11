@@ -147,12 +147,24 @@ pytest
 
 测试使用模拟 Provider，不会下载 Qwen，也不会调用付费 API。
 
+无需加载模型即可运行 80 条案例的确定性 Evaluation MVP：
+
+```bash
+python scripts/run_evaluation.py
+```
+
+当前组件基线在合成、项目内审核的数据上得到：急症召回率 1.000、急症误报率
+0.0909、Retrieval Recall@3 为 0.625。这些不是临床性能结论。方法、失败样例和
+限制见 [Evaluation MVP 文档](docs/evaluation-mvp.md)。
+
 ## 产品案例与升级计划
 
 - [产品 Case Study（英文）](docs/product-case-study.md)：问题、用户、用户旅程、
   产品决策、权衡、指标、失败场景与非目标。
 - [作品集升级路线图（英文）](docs/portfolio-upgrade-roadmap.md)：包含评测、RAG
   实验、数据分析、Skills 与部署的日期、勾选状态和验收标准。
+- [Evaluation MVP（英文）](docs/evaluation-mvp.md)：数据集设计、基线结果、已发现
+  的失败与尚未测量的指标。
 
 ## 主要文件
 

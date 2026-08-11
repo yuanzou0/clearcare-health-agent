@@ -42,20 +42,21 @@ which evidence supports each product decision.**
 
 ### 1. Evaluation dataset and harness
 
-- [ ] Define a versioned, privacy-safe evaluation schema with case ID, intent,
+- [x] Define a versioned, privacy-safe evaluation schema with case ID, intent,
   expected route, required facts, prohibited claims, expected sources, and
   reviewer status.
-- [ ] Create an 80-case MVP covering emergency, routine health information,
+- [x] Create an 80-case MVP covering emergency, routine health information,
   insufficient context, out-of-scope, adversarial, and retrieval/citation
   scenarios.
 - [ ] Expand to at least 150 cases only after reviewing the MVP labels and
   failure taxonomy.
-- [ ] Implement deterministic checks for route selection, source presence,
-  citation mapping, refusal/non-diagnosis behavior, latency, and model-call
-  count.
+- [x] Implement deterministic component checks for emergency routing, retrieval,
+  citation-ID validity, and in-process latency.
+- [ ] Extend deterministic checks to planner routing, refusal/non-diagnosis
+  behavior, model-call count, and provider latency.
 - [ ] Add judge-based groundedness scoring as a separate, clearly labelled
   metric; never use it as the only safety evaluator.
-- [ ] Generate a reproducible Markdown and JSON evaluation report.
+- [x] Generate a reproducible Markdown and JSON evaluation report.
 - [ ] Add regression thresholds to CI for deterministic metrics.
 
 **Core metrics**

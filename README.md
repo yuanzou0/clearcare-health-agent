@@ -169,6 +169,17 @@ pytest
 
 Tests use fake providers. They do not download Qwen or make paid API calls.
 
+Run the deterministic 80-case Evaluation MVP without loading a model:
+
+```bash
+python scripts/run_evaluation.py
+```
+
+The current component baseline reports 1.000 emergency recall, 0.0909
+emergency false-positive rate, and 0.625 Retrieval Recall@3 on synthetic,
+project-reviewed cases. These are not clinical-performance claims. See the
+[Evaluation MVP methodology and limitations](docs/evaluation-mvp.md).
+
 ## Product case and upgrade plan
 
 - [Product case study](docs/product-case-study.md): problem, users, journey,
@@ -176,6 +187,8 @@ Tests use fake providers. They do not download Qwen or make paid API calls.
 - [Portfolio upgrade roadmap](docs/portfolio-upgrade-roadmap.md): dated,
   checkable milestones for evaluation, RAG experiments, analytics, Skills, and
   deployment.
+- [Evaluation MVP](docs/evaluation-mvp.md): dataset design, baseline results,
+  observed failures, and unmeasured metrics.
 
 ## Project layout
 
