@@ -180,10 +180,11 @@ The current component baseline reports 1.000 emergency recall, 0.0909
 emergency false-positive rate, and 0.625 Retrieval Recall@3 on synthetic,
 project-reviewed cases. These are not clinical-performance claims. See the
 [Evaluation MVP methodology and limitations](docs/evaluation-mvp.md).
-Evaluation v1 also defines a provider-neutral, privacy-safe prediction
-contract for captured Qwen or OpenAI outputs. See the bilingual
-[Evaluation v1 contract](docs/evaluation-v1.md). No model is called unless a
-separate capture workflow is deliberately run.
+Evaluation v1 adds a provider-neutral, privacy-safe prediction contract. The
+committed full local-Qwen baseline reached 81.25% planner-route accuracy and a
+72.5% deterministic task-success proxy with zero provider errors and zero API
+cost. These are engineering regression metrics, not clinical claims. See the
+bilingual [Evaluation v1 report and contract](docs/evaluation-v1.md).
 
 ## Product case and upgrade plan
 
@@ -209,7 +210,9 @@ knowledge.py                    Local retrieval and context construction
 knowledge/medical_guidance.json Versioned guidance with provenance
 knowledge/source_manifest.json  Approved sources and review policy
 scripts/validate_knowledge.py    Standalone provenance/integrity check
+scripts/capture_predictions.py  Resumable local/provider evaluation capture
 skills/curate-health-evidence/   Installable evidence-curation Codex skill
+evaluation/                     Frozen cases, predictions, and reports
 templates/index.html            Web interface
 data_preprocess/                Original GPT-2 preprocessing code
 train.py                        Original GPT-2 training entry point
@@ -218,9 +221,9 @@ tests/                          Automated tests
 
 ## Roadmap
 
-The next milestone is a reviewed local-Qwen prediction run through the
-provider-neutral Evaluation v1 contract. Brand migration follows that gate,
-before the measured comparison of retrieval strategies. See the
+The reviewed local-Qwen Evaluation v1 baseline is complete, so the project has
+reached the planned brand-migration gate. Brand migration should be isolated in
+the next PR before the measured comparison of retrieval strategies. See the
 [checkable portfolio roadmap](docs/portfolio-upgrade-roadmap.md) for priorities,
 acceptance criteria, and timeline.
 

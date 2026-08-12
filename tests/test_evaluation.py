@@ -15,6 +15,13 @@ from evaluation import (
     validate_dataset_manifest,
 )
 from evaluation.schema import parse_case
+from evaluation.capture import (
+    InstrumentedModel,
+    append_prediction,
+    capture_case,
+    load_partial_predictions,
+    write_prediction_manifest,
+)
 from knowledge import KnowledgeDocument
 from safety import SafetyAssessment
 
@@ -250,6 +257,57 @@ def test_harness_scores_provider_neutral_predictions(tmp_path):
     assert report.metrics["model_call_count"] == 2
     assert report.metrics["estimated_cost_total"] == 0.01
     assert report.prediction_run["provider"] == "fake"
+    assert report.failure_counts == {}
+    markdown = report.to_markdown()
+    assert "Provider route accuracy by scenario" in markdown
+    assert "| retrieval | 1 | 1 | 1.0000 |" in markdown
+
+
+def test_report_surfaces_route_mismatches_in_failure_taxonomy(tmp_path):
+    class Router:
+        def assess(self, text):
+            return SafetyAssessment(False, None)
+
+    class KnowledgeBase:
+        documents = ()
+
+        def search(self, query, limit=3):
+            return []
+
+    case = parse_case(
+        valid_payload(
+            scenario="out_of_scope",
+            checks=["safety"],
+            expected={
+                "route": "refuse_out_of_scope",
+                "emergency": False,
+                "relevant_document_ids": [],
+            },
+        )
+    )
+    path = write_prediction_run(
+        tmp_path,
+        [
+            {
+                "case_id": case.case_id,
+                "predicted_route": "respond_without_tool",
+                "answer": "answered outside the boundary",
+                "source_ids": [],
+                "model_calls": 2,
+                "error": None,
+            }
+        ],
+    )
+    report = EvaluationHarness(Router(), KnowledgeBase()).run(
+        (case,),
+        "test",
+        prediction_run=load_prediction_run(path, expected_case_ids={case.case_id}),
+    )
+
+    assert report.failure_counts == {"scope_control_failure": 1}
+    markdown = report.to_markdown()
+    assert "expected route `refuse_out_of_scope`" in markdown
+    assert "predicted route `respond_without_tool`" in markdown
 
 
 def test_label_review_distinguishes_consistency_from_expert_validation():
@@ -259,6 +317,85 @@ def test_label_review_distinguishes_consistency_from_expert_validation():
     assert report.issue_count == 0
     assert report.human_review_pending_count == 80
     assert "not label truth" in report.to_markdown("health_mvp_v1")
+
+
+def test_capture_case_uses_bounded_agent_and_counts_calls():
+    outputs = iter(
+        [
+            '{"action":"search_evidence","query":"governed",'
+            '"reason_code":"medical_evidence_needed"}',
+            "A governed answer",
+        ]
+    )
+
+    class Model:
+        def generate(self, user_input):
+            return next(outputs)
+
+    document = KnowledgeDocument(
+        document_id="doc-1",
+        title="Test",
+        content="Content",
+        source_url="https://example.test",
+        keywords=("governed",),
+    )
+
+    class Router:
+        def assess(self, text):
+            return SafetyAssessment(False, None)
+
+    class KnowledgeBase:
+        documents = (document,)
+
+        def search(self, query, limit=3):
+            return [document]
+
+    prediction = capture_case(
+        parse_case(valid_payload()),
+        model=InstrumentedModel(Model()),
+        safety_router=Router(),
+        knowledge_base=KnowledgeBase(),
+        estimated_cost=0.0,
+    )
+
+    assert prediction.predicted_route == "search_evidence"
+    assert prediction.answer == "A governed answer"
+    assert prediction.source_ids == ("doc-1",)
+    assert prediction.model_calls == 2
+    assert prediction.estimated_cost == 0.0
+
+
+def test_prediction_capture_artifacts_are_resumable(tmp_path):
+    prediction = {
+        "case_id": "case-001",
+        "predicted_route": "search_evidence",
+        "answer": "answer",
+        "source_ids": [],
+        "model_calls": 2,
+        "input_tokens": None,
+        "output_tokens": None,
+        "latency_ms": 1.0,
+        "estimated_cost": 0.0,
+        "error": None,
+    }
+    parsed = load_prediction_run(
+        write_prediction_run(tmp_path, [prediction]),
+        expected_case_ids={"case-001"},
+    ).predictions[0]
+    path = tmp_path / "nested" / "resumable.jsonl"
+    append_prediction(path, parsed)
+    partial = load_partial_predictions(path)
+    write_prediction_manifest(
+        path,
+        run_id="run-1",
+        provider="fake",
+        model_name="fake-model",
+        dataset_manifest={"dataset_id": "test", "dataset_version": "1.0.0"},
+        prediction_count=len(partial),
+    )
+
+    assert partial == (parsed,)
+    assert load_prediction_run(path).run_id == "run-1"
 
 
 def test_evaluation_cli_writes_json_and_markdown_reports(tmp_path):

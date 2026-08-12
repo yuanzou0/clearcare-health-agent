@@ -34,7 +34,7 @@ which evidence supports each product decision.**
 - [x] Govern evidence records with source metadata, review status, content
   hashes, and freshness rules.
 - [x] Ship the installable `curate-health-evidence` developer Skill.
-- [x] Pass the current automated suite (43 tests as of 2026-08-11).
+- [x] Pass the current automated suite (56 tests as of 2026-08-12).
 - [x] Publish an initial product case study at
   [`docs/product-case-study.md`](product-case-study.md).
 
@@ -55,7 +55,7 @@ which evidence supports each product decision.**
 - [x] Add a provider-neutral prediction contract and deterministic scoring for
   planner routing, completion, prohibited claims, sources, model calls, tokens,
   provider latency, and estimated cost.
-- [ ] Capture and review a complete local-Qwen prediction run before setting
+- [x] Capture and review a complete local-Qwen prediction run before setting
   end-to-end regression thresholds.
 - [x] Run deterministic label-consistency review; keep all 80 cases marked as
   pending qualified human review.
@@ -80,7 +80,7 @@ retrieval strategy.
 
 ### 2. Failure taxonomy and release gates
 
-- [ ] Define failure categories: missed emergency, unnecessary escalation,
+- [x] Define failure categories: missed emergency, unnecessary escalation,
   missing clarification, retrieval miss, unsupported claim, citation mismatch,
   incomplete answer, unsafe instruction, and provider/runtime failure.
 - [ ] Set guardrail thresholds before running comparative experiments.
@@ -116,7 +116,7 @@ cost.
   across model/retrieval versions.
 - [ ] Show guardrail metrics next to task-success metrics so aggregate quality
   cannot hide safety regressions.
-- [ ] Add a short analysis notebook or report containing at least one segmented
+- [x] Add a short analysis notebook or report containing at least one segmented
   failure analysis and one recommendation based on data.
 
 **Definition of done:** a reviewer can identify the largest failure segment and

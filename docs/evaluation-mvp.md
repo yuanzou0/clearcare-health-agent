@@ -66,15 +66,13 @@ retrieval. They are not model or end-to-end latency.
 
 ## What is deliberately not measured yet
 
-- Planner route accuracy
 - Response groundedness or unsupported-claim rate
-- End-to-end task success
-- Model latency, token usage, or estimated cost
 - Human usefulness or trust
 
-Those metrics require captured provider outputs, clearer rubrics, and—where
-appropriate—human or judge review. They remain `not measured` in the report
-instead of being inferred from unit tests.
+Planner routes, deterministic task success, model latency, token usage, and
+estimated cost are now measured by Evaluation v1. Semantic groundedness and
+human usefulness still require clearer rubrics and—where appropriate—human or
+judge review. They remain `not measured` instead of being inferred from tests.
 
 ## Next increment
 
@@ -84,9 +82,10 @@ instead of being inferred from unit tests.
    concept, completion, call, token, latency, and cost scoring.
 3. **Completed:** add a label-consistency report; all 80 cases pass structural
    checks and remain explicitly pending qualified human review.
-4. **Next:** capture a full local-Qwen prediction run, analyse failures, and
-   freeze reviewed regression thresholds.
-5. **Later:** add judge-based groundedness as a separately labelled
-   experimental metric and expand to 150 cases only after label review.
+4. **Completed:** capture a full local-Qwen prediction run and segment failures
+   by scenario and failure category.
+5. **Next:** review labels and freeze regression thresholds; add judge-based
+   groundedness as a separately labelled experimental metric and expand to 150
+   cases only after label review.
 
 See the bilingual [Evaluation v1 prediction contract](evaluation-v1.md).

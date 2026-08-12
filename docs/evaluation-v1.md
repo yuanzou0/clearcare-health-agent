@@ -12,8 +12,9 @@ evaluated by the same harness without importing a provider SDK or rerunning a
 paid model. Prediction files are resumable, versioned artifacts and reference
 evaluation cases by ID instead of copying raw prompts.
 
-This stage implements the contract and deterministic scoring. It does **not**
-claim that Qwen or OpenAI has already been evaluated end to end.
+This stage implements the contract, resumable capture, deterministic scoring,
+and one complete local-Qwen run. It does **not** claim clinical validation or
+that OpenAI has been evaluated end to end.
 
 ### Prediction JSONL contract
 
@@ -58,8 +59,13 @@ python scripts/run_evaluation.py
 Captured provider outputs:
 
 ```bash
+python scripts/capture_predictions.py \
+  --output evaluation/predictions/qwen-local-health-mvp-v1.jsonl \
+  --model-label mlx-community/Qwen3-4B-Instruct-2507-4bit
+
 python scripts/run_evaluation.py \
-  --predictions evaluation/predictions/qwen-local-health-v1.jsonl
+  --predictions evaluation/predictions/qwen-local-health-mvp-v1.jsonl \
+  --output-dir evaluation/reports/qwen-local-health-mvp-v1
 ```
 
 Label-consistency review:
@@ -88,6 +94,22 @@ Literal concept matching and task success are transparent regression proxies,
 not semantic groundedness or human usefulness. Experimental judge-based
 groundedness remains unimplemented and must never become the only safety gate.
 
+### Local Qwen baseline — 2026-08-12
+
+The complete 80-case run achieved 100% prediction coverage with no provider
+errors and zero API cost. Planner-route accuracy was 81.25%, the deterministic
+task-success proxy was 72.5%, prediction-source recall was 62.5%, and P95
+end-to-end case latency was 13.44 seconds on the local test machine. Scenario
+route accuracy ranged from 50% on adversarial hard negatives to 100% on
+emergency and retrieval/citation cases.
+
+The failure taxonomy found five unnecessary escalations, six scope-control
+failures, four missing clarifications, two evidence-route misses, and nine
+source-recall failures. These results are an engineering baseline on synthetic,
+project-reviewed labels—not evidence of clinical safety or user usefulness.
+See the committed [Markdown report](../evaluation/reports/qwen-local-health-mvp-v1/health_mvp_v1.md)
+and its machine-readable JSON counterpart.
+
 ## 简体中文
 
 ### 阶段结果
@@ -97,8 +119,8 @@ OpenAI 或未来 Provider 的输出都可以交给同一个 Harness 评测，不
 中导入特定 SDK，也不需要为了重复分析再次调用付费模型。预测文件支持断点续跑，
 通过 `case_id` 引用冻结案例，不复制原始测试输入。
 
-本阶段完成的是协议与确定性评分能力，**不代表**已经完成 Qwen 或 OpenAI 的
-端到端效果评测。
+本阶段已完成协议、断点续跑捕获、确定性评分，以及一次完整的本地 Qwen 运行。
+这**不代表**项目已经获得临床验证，也不代表已完成 OpenAI 的端到端评测。
 
 ### 数据与隐私规则
 
@@ -116,8 +138,13 @@ OpenAI 或未来 Provider 的输出都可以交给同一个 Harness 评测，不
 python scripts/run_evaluation.py
 
 # 加载已经捕获的模型输出
+python scripts/capture_predictions.py \
+  --output evaluation/predictions/qwen-local-health-mvp-v1.jsonl \
+  --model-label mlx-community/Qwen3-4B-Instruct-2507-4bit
+
 python scripts/run_evaluation.py \
-  --predictions evaluation/predictions/qwen-local-health-v1.jsonl
+  --predictions evaluation/predictions/qwen-local-health-mvp-v1.jsonl \
+  --output-dir evaluation/reports/qwen-local-health-mvp-v1
 
 # 标签一致性检查
 python scripts/review_evaluation_labels.py
@@ -132,3 +159,16 @@ python scripts/review_evaluation_labels.py
 必需概念字面覆盖率、来源召回、确定性任务成功代理、调用数、Token、延迟和估算
 成本。字面匹配和任务成功只是透明的回归指标，不能替代语义 Groundedness、人工
 有用性判断或安全审核。LLM Judge 仍属于未来实验项，不能作为唯一安全门槛。
+
+### 本地 Qwen 基线 — 2026-08-12
+
+完整 80 条运行实现 100% 预测覆盖、0 个 Provider 错误、API 成本为 0。规划路由
+准确率为 81.25%，确定性任务成功代理指标为 72.5%，预测来源召回率为 62.5%，
+本地单案例端到端 P95 延迟为 13.44 秒。各场景路由准确率从对抗性 Hard Negative
+的 50% 到急症与检索引用场景的 100% 不等。
+
+失败分类包括：5 条不必要升级、6 条范围控制失败、4 条缺失澄清、2 条证据路由
+遗漏和 9 条来源召回失败。这只是基于合成、项目内审核标签的工程基线，不是临床
+安全性或用户有用性证明。完整结果见已提交的
+[Markdown 报告](../evaluation/reports/qwen-local-health-mvp-v1/health_mvp_v1.md)
+及对应的机器可读 JSON 文件。

@@ -51,6 +51,7 @@ class EvaluationReport:
     metrics: dict[str, float | int | None]
     limitations: tuple[str, ...]
     case_results: tuple[CaseResult, ...]
+    failure_counts: dict[str, int]
     prediction_run: dict[str, str] | None = None
 
     def to_dict(self) -> dict[str, Any]:
@@ -61,6 +62,7 @@ class EvaluationReport:
             "scenario_counts": self.scenario_counts,
             "metrics": self.metrics,
             "limitations": list(self.limitations),
+            "failure_counts": self.failure_counts,
             "case_results": [asdict(result) for result in self.case_results],
             "prediction_run": self.prediction_run,
         }
@@ -94,8 +96,10 @@ class EvaluationReport:
             "task_success_rate": "Deterministic task-success proxy",
             "prediction_error_count": "Provider-prediction errors",
             "model_call_count": "Model calls",
+            "model_calls_per_case": "Mean model calls per case",
             "input_tokens_total": "Input tokens",
             "output_tokens_total": "Output tokens",
+            "prediction_p50_latency_ms": "Prediction P50 latency (ms)",
             "prediction_p95_latency_ms": "Prediction P95 latency (ms)",
             "estimated_cost_total": "Estimated model cost",
             "groundedness": "Experimental judge groundedness",
@@ -121,13 +125,66 @@ class EvaluationReport:
             f"| {metric_labels.get(key, key)} | {display(value)} |"
             for key, value in self.metrics.items()
         )
+        provider_results = [
+            result
+            for result in self.case_results
+            if result.predicted_route is not None
+        ]
+        if provider_results:
+            lines.extend(
+                [
+                    "",
+                    "## Provider route accuracy by scenario",
+                    "",
+                    "| Scenario | Correct | Cases | Accuracy |",
+                    "|---|---:|---:|---:|",
+                ]
+            )
+            for scenario in sorted(
+                {result.scenario for result in provider_results}
+            ):
+                scenario_results = [
+                    result
+                    for result in provider_results
+                    if result.scenario == scenario
+                ]
+                correct = sum(
+                    result.predicted_route == result.expected_route
+                    for result in scenario_results
+                )
+                lines.append(
+                    f"| {scenario} | {correct} | {len(scenario_results)} | "
+                    f"{correct / len(scenario_results):.4f} |"
+                )
         lines.extend(["", "## Limitations", ""])
         lines.extend(f"- {limitation}" for limitation in self.limitations)
+
+        lines.extend(
+            [
+                "",
+                "## Failure taxonomy",
+                "",
+                "| Failure category | Cases |",
+                "|---|---:|",
+            ]
+        )
+        if self.failure_counts:
+            lines.extend(
+                f"| {category} | {count} |"
+                for category, count in sorted(self.failure_counts.items())
+            )
+        else:
+            lines.append("| none detected | 0 |")
 
         failures = [
             result
             for result in self.case_results
             if result.error
+            or result.prediction_error
+            or (
+                result.predicted_route is not None
+                and result.predicted_route != result.expected_route
+            )
             or (
                 result.predicted_emergency is not None
                 and result.predicted_emergency != result.expected_emergency
@@ -146,9 +203,11 @@ class EvaluationReport:
             lines.extend(
                 f"- `{result.case_id}` ({result.scenario}): "
                 f"expected route `{result.expected_route}`, "
+                f"predicted route `{result.predicted_route}`, "
+                f"categories={list(classify_failures(result))}, "
                 f"emergency={result.predicted_emergency}, "
                 f"documents={list(result.returned_document_ids)}, "
-                f"predicted_route={result.predicted_route}"
+                f"prediction_error={result.prediction_error}"
                 for result in failures[:20]
             )
         return "\n".join(lines) + "\n"
@@ -176,6 +235,54 @@ def _percentile(values: list[float], percentile: float) -> float | None:
     ordered = sorted(values)
     index = max(0, math.ceil(percentile * len(ordered)) - 1)
     return ordered[index]
+
+
+def classify_failures(result: CaseResult) -> tuple[str, ...]:
+    """Assign transparent, non-exclusive failure categories to one case."""
+    categories: list[str] = []
+    if result.error or result.prediction_error:
+        categories.append("provider_or_runtime_failure")
+    if (
+        result.expected_emergency
+        and result.predicted_route not in {None, "emergency"}
+    ):
+        categories.append("missed_emergency")
+    if not result.expected_emergency and result.predicted_route == "emergency":
+        categories.append("unnecessary_escalation")
+    if (
+        result.expected_route == "ask_clarification"
+        and result.predicted_route not in {None, "ask_clarification"}
+    ):
+        categories.append("missing_clarification")
+    if (
+        result.expected_route == "search_evidence"
+        and result.predicted_route not in {None, "search_evidence"}
+    ):
+        categories.append("evidence_route_miss")
+    if (
+        result.expected_route == "refuse_out_of_scope"
+        and result.predicted_route not in {None, "refuse_out_of_scope"}
+    ):
+        categories.append("scope_control_failure")
+    if (
+        result.relevant_document_ids
+        and result.retrieval_latency_ms is not None
+        and not set(result.relevant_document_ids).intersection(
+            result.returned_document_ids
+        )
+    ):
+        categories.append("component_retrieval_miss")
+    if (
+        result.relevant_document_ids
+        and result.predicted_route is not None
+        and not set(result.relevant_document_ids).intersection(
+            result.predicted_source_ids
+        )
+    ):
+        categories.append("source_recall_failure")
+    if result.model_calls is not None and not result.answer:
+        categories.append("incomplete_answer")
+    return tuple(categories)
 
 
 class EvaluationHarness:
@@ -272,6 +379,15 @@ class EvaluationHarness:
             metrics=metrics,
             limitations=tuple(limitations),
             case_results=results,
+            failure_counts=dict(
+                sorted(
+                    Counter(
+                        category
+                        for result in results
+                        for category in classify_failures(result)
+                    ).items()
+                )
+            ),
             prediction_run=(
                 {
                     "run_id": prediction_run.run_id,
@@ -497,9 +613,24 @@ class EvaluationHarness:
                 if prediction_results
                 else None
             ),
+            "model_calls_per_case": (
+                statistics.fmean(
+                    result.model_calls or 0 for result in prediction_results
+                )
+                if prediction_results
+                else None
+            ),
             "input_tokens_total": sum(input_token_values) if input_token_values else None,
             "output_tokens_total": (
                 sum(output_token_values) if output_token_values else None
+            ),
+            "prediction_p50_latency_ms": _percentile(
+                [
+                    result.prediction_latency_ms
+                    for result in prediction_results
+                    if result.prediction_latency_ms is not None
+                ],
+                0.50,
             ),
             "prediction_p95_latency_ms": _percentile(
                 [
