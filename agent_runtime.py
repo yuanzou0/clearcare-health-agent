@@ -29,6 +29,12 @@ ALLOWED_REASON_CODES = {
     "out_of_scope_request",
     "planner_fallback",
 }
+ACTION_REASON_CODES = {
+    "search_evidence": {"medical_evidence_needed", "planner_fallback"},
+    "ask_clarification": {"missing_critical_context"},
+    "respond_without_tool": {"general_conversation"},
+    "refuse_out_of_scope": {"out_of_scope_request"},
+}
 
 OUT_OF_SCOPE_MESSAGE = """这个演示当前专注于提供有来源约束的健康信息，无法代写、翻译、编程、预测天气或提供金融建议。
 
@@ -80,7 +86,11 @@ def parse_agent_decision(raw: str, fallback_query: str) -> AgentDecision:
             payload = json.loads(match.group(0))
             action = payload.get("action")
             reason_code = payload.get("reason_code")
-            if action in ALLOWED_ACTIONS and reason_code in ALLOWED_REASON_CODES:
+            if (
+                action in ALLOWED_ACTIONS
+                and reason_code in ALLOWED_REASON_CODES
+                and reason_code in ACTION_REASON_CODES[action]
+            ):
                 query = str(payload.get("query", ""))[:500].strip()
                 return AgentDecision(action, query, reason_code)
         except (TypeError, ValueError):
@@ -117,7 +127,7 @@ class GovernedEvidenceAgent:
         ]
 
         documents: list[Any] = []
-        response_input = conversation_input
+        response_input = f"[AGENT_RESPONSE]\n{conversation_input}"
         if decision.action == "search_evidence":
             planned_query = (
                 decision.query
@@ -137,7 +147,8 @@ class GovernedEvidenceAgent:
             )
             response_input = augment_with_context(conversation_input, documents)
         elif decision.action == "ask_clarification":
-            response_input = f"""请仅提出回答当前健康问题所必需的补充问题，最多四个。不要作出诊断。
+            response_input = f"""[AGENT_RESPONSE]
+请仅提出回答当前健康问题所必需的补充问题，最多四个。不要作出诊断。
 
 {conversation_input}"""
 
