@@ -40,7 +40,8 @@ def test_homepage_uses_professional_brand_and_assets():
     assert response.status_code == 200
     assert "<title>澄心循证健康智能体</title>" in html
     assert "ClearCare Health" in html
-    assert "Governed Agent Lab" in html
+    assert "Safety · Governed RAG · Agent Evaluation" in html
+    assert "Governed Agent Lab" not in html
     assert "BOUNDED · LOCAL-FIRST · EVIDENCE-AWARE" in html
     assert "PRIVATE ·" not in html
     assert "/static/styles.css" in html

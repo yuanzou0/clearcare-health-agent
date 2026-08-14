@@ -41,7 +41,7 @@ OUT_OF_SCOPE_MESSAGE = """这个演示当前专注于提供有来源约束的健
 如果你有健康信息或权威资料来源方面的问题，我可以继续协助。"""
 
 PLANNER_PROMPT = """[AGENT_PLAN]
-你是 Governed Agent Lab 中 ClearCare Health 垂直案例的任务规划器。根据本次咨询，只选择下一步动作，不要回答健康问题，也不要展示推理过程。
+你是 ClearCare Health 的有界任务规划器。根据本次咨询，只选择下一步动作，不要回答健康问题，也不要展示推理过程。
 
 只输出单行 JSON：
 {{"action":"search_evidence|ask_clarification|respond_without_tool|refuse_out_of_scope","query":"检索词或空字符串","reason_code":"medical_evidence_needed|missing_critical_context|general_conversation|out_of_scope_request"}}

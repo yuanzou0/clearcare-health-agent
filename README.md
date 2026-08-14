@@ -1,64 +1,104 @@
-# Governed Agent Lab
+# ClearCare Health
+
+**A safety-bounded, evidence-grounded healthcare information AI agent**
+
+Safety · Governed RAG · Agent Evaluation · Evidence Governance
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-An engineering and product portfolio for building **bounded, measurable, and
-governed AI agents**. The repository combines an allow-listed agent runtime,
-governed evidence, provider-neutral evaluation, failure analysis, and reusable
-Codex Skills.
+ClearCare Health / 澄心循证健康智能体 is a vertical Applied AI product case:
+how can an LLM help a person organize a health question, surface important
+warning signs, and inspect general-information sources without presenting
+itself as a clinician?
 
-**ClearCare Health / 澄心循证健康智能体 is the first implemented reference
-vertical—not the platform identity.** The current web experience, safety router,
-evidence corpus, and measured results remain health-specific. A reusable domain
-adapter and a second vertical are roadmap items, not completed features.
+The implementation contains reusable governed-agent components, but this
+repository does **not** claim to be a proven general-purpose agent platform.
+Its product behavior, evidence corpus, safety policy, and measured results are
+specific to the ClearCare health-information scenario.
 
 > [!WARNING]
-> The health demo is for research and education only. It does not diagnose,
-> prescribe, or replace a clinician. Do not enter real patient identifiers,
-> contact details, or other sensitive information.
+> This project is for research and education only. It does not diagnose,
+> prescribe, select treatment, or replace a clinician. Do not enter real
+> patient identifiers, contact details, or other sensitive information.
 
-## What is implemented
+## Product thesis
 
-| Layer | Current state |
+General-purpose LLM health answers can sound more certain than their evidence,
+miss time-sensitive signals, fabricate or misuse citations, and treat missing
+context as permission to guess. ClearCare turns those risks into explicit
+product constraints:
+
+- deterministic routing for strong emergency signals before model generation;
+- one allow-listed plan/tool/respond cycle and at most one read-only tool call;
+- governed sources with provenance, freshness, domain, review, and hash checks;
+- citations displayed separately from generated prose;
+- local Qwen by default and explicit per-request consent for optional OpenAI;
+- provider-neutral evaluation with visible limitations and failure segments.
+
+## Current implementation
+
+| Capability | Current state |
 |---|---|
-| Bounded agent runtime | Implemented: one plan/tool/respond cycle, allow-listed action/reason pairs, one read-only tool call |
-| Governed evidence | Implemented for ClearCare: approved-source registry, provenance, review dates, URL-host binding, freshness and SHA-256 checks |
-| Evaluation | Implemented: deterministic and provider-neutral cases, privacy-safe predictions, failure taxonomy, Keyword/BM25 comparison |
-| Model providers | Implemented: local Qwen default, optional OpenAI, quarantined legacy GPT-2 baseline |
-| Web demo | Implemented for local/single-process use with conversation memory, agent trace, citations, CSRF and abuse controls |
-| Cross-domain adapter | Planned; health-specific prompts, safety policy, corpus schema, and UI have not yet been extracted |
-| Production multi-user service | Not supported; authentication, distributed rate limiting, encrypted persistence, observability, and compliance controls are absent |
+| Safety routing | Deterministic strong-signal router; measurable but not a diagnostic classifier |
+| Bounded agent | One plan/tool/respond cycle with validated action/reason pairs and one read-only evidence tool |
+| Conversation | Bounded in-memory follow-up context and an explicit reset action |
+| Governed RAG | Approved-source registry, URL-host binding, review dates, corpus bounds, and SHA-256 integrity |
+| Evaluation | 80-case development set, provider-neutral capture, failure taxonomy, and Keyword/BM25 comparison |
+| Model providers | Pinned local Qwen default and optional OpenAI; GPT-2 is excluded from the web runtime |
+| Web demo | Local/single-process Flask interface with trace, citations, CSRF, request limits, and security headers |
+| Clinical validation | Not completed; the three project-authored summaries are not clinician-reviewed |
+| Production deployment | Not supported; authentication, distributed controls, encrypted persistence, and compliance work are absent |
 
-## Architecture
+## User and agent flow
 
 ```text
-Governed Agent Lab
-├── Platform core
-│   ├── bounded planner / tool / responder runtime
-│   ├── provider-neutral prediction and evaluation contract
-│   ├── governed-source validation and retrieval experiments
-│   └── security and privacy guardrails
-├── ClearCare Health reference vertical
-│   ├── emergency routing and clarification policy
-│   ├── project-authored health evidence summaries
-│   └── local web demo and measured development cases
-├── Developer workflows
-│   └── curate-health-evidence Codex Skill
-└── Legacy baseline
-    └── original GPT-2 training/inference code and separately prepared data
+User health-information question
+  → validate input and consent boundary
+  → deterministic emergency routing
+      ├─ strong signal: fixed emergency guidance; no model call
+      └─ non-emergency: bounded planner
+          ├─ ask for essential clarification
+          ├─ search governed evidence
+          └─ respond without a tool
+              → local Qwen by default
+              → optional OpenAI when enabled and selected
+  → answer + separate source links + inspectable action trace
+  → bounded follow-up context or explicit reset
 ```
 
-For a non-emergency ClearCare request, the planner selects exactly one
-allow-listed route: ask for essential clarification, search governed evidence,
-or respond without a tool. Strong emergency signals are routed to fixed
-guidance before any model or rate limit is invoked. The trace exposes actions
-and result counts, never hidden chain-of-thought.
+The trace reports actions and result counts, never hidden chain-of-thought.
 
-## Measured evidence, not benchmark theatre
+## Architecture: reusable, not over-claimed
+
+```text
+ClearCare Health
+├── Product policy
+│   ├── non-diagnosis boundary
+│   ├── emergency routing
+│   └── clarification and out-of-scope policy
+├── Governed agent architecture
+│   ├── bounded planner / tool / responder runtime
+│   ├── provider adapters
+│   ├── evidence validation and retrieval
+│   └── privacy and web guardrails
+├── Evaluation
+│   ├── frozen health cases and prediction contract
+│   ├── safety, retrieval, citation, latency, and cost metrics
+│   └── segmented failure reports
+└── Developer workflow
+    └── curate-health-evidence Codex Skill
+```
+
+The runtime and evaluation contracts are designed for reuse. They should be
+called *domain-extensible abstractions*, not a validated horizontal platform,
+until another product domain has its own policy, corpus, frozen evaluation,
+and human review.
+
+## Measured evidence and limitations
 
 The committed results are engineering regression measurements on a small,
-project-reviewed **health development set**. They are neither independent
-benchmarks nor clinical-performance claims.
+project-reviewed **health development set**. They are not independent
+benchmarks or clinical-performance claims.
 
 | Measurement | Keyword baseline | BM25 candidate |
 |---|---:|---:|
@@ -68,10 +108,48 @@ benchmarks nor clinical-performance claims.
 | Citation-ID validity | 100% | 100% |
 
 BM25 remains a candidate because selection and measurement used the same
-development set. Promotion requires an independent holdout and regression
-gate. See [Evaluation v1](docs/evaluation-v1.md),
+development set. Citation-ID validity proves that a returned ID exists; it
+does not prove claim-level entailment or answer groundedness. Promotion now
+requires a broader governed corpus, an author-separated blind holdout, and
+human-reviewed groundedness results.
+
+See [Evaluation v1](docs/evaluation-v1.md),
 [RAG V2](docs/rag-v2-experiment.md), and the
 [Evaluation MVP](docs/evaluation-mvp.md).
+
+## What I owned, inherited, and removed
+
+### Implemented in the modernization
+
+- the professional Flask experience, bounded multi-turn memory, and explicit
+  cloud-consent flow;
+- local Qwen and optional OpenAI provider abstraction;
+- deterministic emergency routing and bounded agent orchestration;
+- governed evidence schema, source manifest, validation, and retrieval
+  experiments;
+- provider-neutral evaluation capture, metrics, failure analysis, and reports;
+- the evidence-curation Codex Skill, product case study, roadmap, and security
+  hardening.
+
+### Inherited starting point
+
+The project began from
+[`phoenix-zhou/GPT2-mcc`](https://github.com/phoenix-zhou/GPT2-mcc). Its legacy
+GPT-2 training/inference scripts, vocabulary, and model configuration are
+inherited work and are not presented as original contributions. The upstream
+repository does not declare an open-source license.
+
+### Removed or quarantined
+
+- raw legacy medical dialogue TXT/Pickle data with unresolved provenance and
+  de-identification quality;
+- tracked Python bytecode, duplicate templates/vocabulary, and scratch scripts;
+- unrestricted Pickle loading, raw conversation logging by default, and the
+  legacy GPT-2 web provider;
+- mutable default model and CI references.
+
+See the [security and risk review](docs/security-and-risk-review.md) for the
+full finding and residual-risk record.
 
 ## Quick start
 
@@ -90,8 +168,8 @@ python scripts/run_evaluation.py
 
 ### Run the local Qwen demo
 
-On Apple Silicon, the default MLX configuration uses a quantized Qwen model.
-The first run downloads weights and requires sufficient memory.
+The MLX configuration targets Apple Silicon. The first run downloads the
+pinned quantized model and requires sufficient memory.
 
 ```bash
 python -m pip install -e '.[inference]'
@@ -101,16 +179,14 @@ export GOVERNED_AGENT_QWEN_REVISION="50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b"
 flask --app app run
 ```
 
-Open <http://127.0.0.1:5000>. Enter only new information in follow-ups; the
-application supplies the latest bounded conversation context. Select **Start a
-new consultation** to clear it.
+Open <http://127.0.0.1:5000>. In a follow-up, enter only the new information;
+the application supplies bounded recent context. Select **Start a new
+consultation** to clear it.
 
 ### Optional OpenAI comparison
 
-OpenAI API usage is billed separately from ChatGPT subscriptions. The default
-hosted model is the documented [`gpt-5.6-terra`](https://developers.openai.com/api/docs/models/gpt-5.6-terra).
-Cloud use is disabled until the server enables it and the user selects it for
-that request.
+OpenAI API usage is billed separately from ChatGPT subscriptions. Cloud use is
+disabled until the server enables it and the user selects it for that request.
 
 ```bash
 python -m pip install -e '.[openai]'
@@ -120,69 +196,45 @@ export GOVERNED_AGENT_CLOUD_ENHANCEMENT_ENABLED=true
 flask --app app run
 ```
 
-API requests set `store=False`, but that alone is not a zero-data-retention or
+Requests set `store=False`, but that alone is not a zero-data-retention or
 compliance guarantee. Never commit keys or submit sensitive health data.
 
 ## Security and deployment boundary
 
-The local demo now includes CSRF protection, a 16 KiB request limit,
+The local demo includes CSRF protection, a 16 KiB request limit,
 single-process rate limiting, secure cookie defaults, restrictive response
 headers, non-persistent conversations, evidence-source binding, bounded input
-and corpus sizes, and generic error persistence. Production mode fails closed
-without a durable 32+ character secret and secure cookies.
-
-```bash
-export GOVERNED_AGENT_DEPLOYMENT_MODE=production
-export GOVERNED_AGENT_SECRET_KEY="replace-with-a-random-secret-of-at-least-32-characters"
-export GOVERNED_AGENT_SESSION_COOKIE_SECURE=true
-```
+and corpus sizes, pinned model provenance, and generic error persistence.
+Production mode fails closed without a durable 32+ character secret and secure
+cookies.
 
 These controls do **not** make the Flask development server internet-ready.
 There is no user authentication, authorization, distributed rate limiter,
 encrypted persistent session store, WAF, audit service, or healthcare
-compliance certification. Put a production server and reverse proxy in front
-only after those controls are designed. See the
-[security and risk review](docs/security-and-risk-review.md) and
-[SECURITY.md](SECURITY.md).
+compliance certification. See [SECURITY.md](SECURITY.md).
 
-## Governed evidence and data provenance
+## Governed evidence and data strategy
 
-`knowledge/medical_guidance.json` contains three project-authored Chinese
-summaries linked to CDC, NHS, and WHO pages. They are marked as **not
-clinician-reviewed** and must not be represented as validated clinical advice.
-`knowledge/source_manifest.json` defines approved issuers, domains, reuse
-status, jurisdiction, and review policy. Runtime loading rejects unknown or
-impersonated sources, stale reviews, future dates, unsafe URLs, duplicate IDs,
-oversized records, and content/hash mismatches.
+The current corpus contains only three project-authored Chinese summaries
+linked to CDC, NHS, and WHO pages. They are explicitly **not
+clinician-reviewed**. Runtime loading rejects unknown or impersonated sources,
+stale reviews, future dates, unsafe URLs, duplicate IDs, oversized records, and
+content/hash mismatches.
 
-Adding more documents does not automatically improve reliability. New material
-should be added only through a defined coverage gap, governed-source review,
-holdout evaluation, and release gate. The included
-[`curate-health-evidence`](skills/curate-health-evidence/) Skill automates the
-deterministic parts of that workflow; it does not perform clinical review.
+The next corpus version will be coverage-driven rather than volume-driven:
+roughly 20–30 governed documents across 6–8 topic clusters, including
+paraphrases, hard negatives, no-hit cases, and jurisdiction differences.
+Adding more documents alone is not a reliability claim. The included
+[`curate-health-evidence`](skills/curate-health-evidence/) Skill automates
+deterministic governance checks; it does not perform clinical review.
 
 ## Legacy GPT-2 boundary
 
-The original GPT-2 code is retained as a historical CLI/training baseline and
-is not exposed as a web provider or used by the default runtime/evaluation.
-Generated Pickle datasets and Python bytecode are no longer tracked. Dataset
-loading accepts only bounded lists of integer token IDs and rejects Pickle
-globals/classes; checkpoint loading is local-only and Safetensors-only.
-
-The raw legacy text and generated Pickles were removed from the current tree
-because their provenance, de-identification quality, and redistribution rights
-could not be established. Repository history or upstream snapshots may still
-retain earlier artifacts. Supply your own lawfully obtained, de-identified data
-outside the repository and prepare it explicitly:
-
-```bash
-python -m pip install -e '.[training]'
-python data_preprocess/preprocess.py --input /path/to/train.txt --output local_data/train.pkl
-python data_preprocess/preprocess.py --input /path/to/valid.txt --output local_data/valid.pkl
-```
-
-Raw conversation sample logging is disabled by default. Do not enable it for
-real personal or health information.
+The original GPT-2 code remains only as an attributed historical CLI/training
+baseline. It is not a web provider or part of the current evaluation. Data
+loading rejects Pickle globals/classes and oversized structures; checkpoint
+loading is local-only and Safetensors-only. Raw legacy datasets are absent from
+the current tree. Git history and upstream snapshots may still retain them.
 
 ## Repository map
 
@@ -194,34 +246,40 @@ conversation.py                 Bounded in-memory context
 safety.py                        ClearCare emergency routing
 knowledge.py, retrieval.py       Governed corpus validation and retrieval
 evaluation/, scripts/            Cases, capture, reports, and release checks
-skills/curate-health-evidence/   Installable developer-facing Codex Skill
+skills/curate-health-evidence/   Developer-facing evidence Skill
 docs/                            Product, evaluation, RAG, brand, and risk records
-data_preprocess/, train.py       Quarantined legacy GPT-2 workflow
+data_preprocess/, train.py       Attributed, quarantined GPT-2 legacy workflow
 tests/                           Automated regression and security tests
 ```
 
-## Product and engineering documents
+## Product documents
 
 - [Product case study](docs/product-case-study.md)
 - [Portfolio upgrade roadmap](docs/portfolio-upgrade-roadmap.md)
-- [Brand architecture](docs/brand-architecture.md)
+- [Brand and ownership architecture](docs/brand-architecture.md)
 - [Evaluation MVP](docs/evaluation-mvp.md) and [Evaluation v1](docs/evaluation-v1.md)
 - [RAG V2 experiment](docs/rag-v2-experiment.md)
 - [Security and risk review](docs/security-and-risk-review.md)
 
-## Roadmap
+## Next milestones
 
-1. Freeze an independently reviewed holdout and add release regression gates.
-2. Add an evaluation dashboard with cohort, failure, latency, and cost slices.
-3. Extract a versioned domain adapter interface for policy, corpus, metrics, and UI.
-4. Prove that interface with a lower-risk second vertical before claiming a
-   general-purpose platform.
-5. Add authentication, durable privacy controls, observability, and deployment
-   hardening only if an external multi-user product becomes a real goal.
+1. Define coverage requirements and freeze a 20–30 document governed corpus.
+2. Create an author-separated blind holdout and run paired Keyword/BM25 replay
+   with the same planner decisions.
+3. Human-review 20–30 sampled answers for citation entailment, claim
+   groundedness, unsupported-claim rate, and usefulness.
+4. Use an LLM judge only as a calibrated secondary metric, never the sole
+   safety gate.
+5. Add a recruiter-readable evaluation dashboard and concise walkthrough.
+
+Embedding, hybrid retrieval, additional tools, and broader autonomy remain
+deferred until these evidence gaps are closed.
 
 ## License and reuse warning
 
 The upstream project does not declare an open-source license, and the provenance
-and reuse rights of the legacy training data are unresolved. Do not assume the
-code or data may be redistributed or used commercially without explicit
-permission. This repository's technical cleanup does not cure that legal risk.
+and reuse rights of the removed legacy training data are unresolved. Do not
+assume inherited code or data may be redistributed or used commercially without
+explicit permission. This modernization does not cure that legal risk; a
+clean-room repository is the safest long-term portfolio path if permission
+cannot be obtained.
