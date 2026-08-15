@@ -1,6 +1,6 @@
 # Health Corpus v1 Coverage Specification
 
-**Status:** planning
+**Status:** frozen on 2026-08-15
 
 **Corpus ID:** `health_corpus_v1`
 
@@ -49,15 +49,15 @@ report compares the live corpus with that contract.
 
 | Cluster ID | Topic | Current | Target | Gap |
 |---|---|---:|---:|---:|
-| `neurological_warning_signs` | Neurological warning signs / 神经系统危险信号 | 1 | 3 | 2 |
-| `cardiovascular_warning_signs` | Cardiovascular warning signs / 心血管危险信号 | 1 | 3 | 2 |
+| `neurological_warning_signs` | Neurological warning signs / 神经系统危险信号 | 3 | 3 | 0 |
+| `cardiovascular_warning_signs` | Cardiovascular warning signs / 心血管危险信号 | 3 | 3 | 0 |
 | `gastrointestinal_symptoms` | Gastrointestinal symptoms / 胃肠道症状 | 3 | 3 | 0 |
 | `respiratory_symptoms` | Respiratory symptoms / 呼吸系统症状 | 3 | 3 | 0 |
 | `fever_and_infection` | Fever and infection / 发热与感染 | 3 | 3 | 0 |
-| `allergy_and_medication_safety` | Allergy and medication safety / 过敏与用药安全 | 0 | 3 | 3 |
-| `child_health` | Child health / 儿童健康 | 0 | 3 | 3 |
-| `mental_health_crisis` | Mental-health crisis / 心理健康危机 | 1 | 3 | 2 |
-| **Total** |  | **12** | **24** | **12** |
+| `allergy_and_medication_safety` | Allergy and medication safety / 过敏与用药安全 | 3 | 3 | 0 |
+| `child_health` | Child health / 儿童健康 | 3 | 3 | 0 |
+| `mental_health_crisis` | Mental-health crisis / 心理健康危机 | 3 | 3 | 0 |
+| **Total** |  | **24** | **24** | **0** |
 
 The targets are portfolio experiment requirements, not medical completeness
 claims. A cluster is not “covered” merely because one record exists.
@@ -114,7 +114,11 @@ project summary is clinically correct or that a generated answer is grounded.
   known gaps, and the exact evaluation split that may use it;
 - no documentation describes project review as clinical validation.
 
-Until then, reports must show status `planning` and the remaining gaps.
+These conditions were mechanically satisfied on 2026-08-15. The frozen
+release and exact artifact hashes are recorded in
+[`knowledge/corpus_release_v1.json`](../knowledge/corpus_release_v1.json).
+Frozen means reproducible and governance-complete for this declared scope; it
+does not mean clinically validated, evidence-graded, or medically complete.
 
 ---
 
@@ -135,6 +139,7 @@ Until then, reports must show status `planning` and the remaining gaps.
 - 只有达到全部验收条件并记录语料哈希、冻结日期和审核状态后，才能将
   `health_corpus_v1` 从 `planning` 改为 `frozen`。
 
-当前共有 12 条记录；胃肠道、呼吸系统、发热与感染三个主题群均达到文档和多来源
-目标。发热与感染主题首次引入国家卫生健康委具体页面，并由 CDC 与 WHO 补充感染
-预防和严重感染警示。距离 24 条目标还差 12 条，因此 Corpus v1 仍在扩充中。
+截至 2026-08-15，语料已达到 24/24 条，8 个主题群均达到文档数和至少两个来源的
+门槛。`knowledge/corpus_release_v1.json` 已记录冻结日期、精确评测切分和各项工件
+哈希。“冻结”只代表此声明范围内可复现且通过机械治理门槛，不代表临床验证、证据
+分级或医学完整性。
