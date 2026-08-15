@@ -37,10 +37,10 @@ Agent 平台**。当前产品行为、资料库、安全策略和实测结论都
 | 有界 Agent | 单次规划—工具—回答；校验动作/原因组合；最多一次只读证据工具 |
 | 多轮会话 | 有界内存上下文和明确的重置动作 |
 | Governed RAG | 版本化覆盖合同、受控主题群、获准来源注册、URL 域名绑定、复核日期、语料上限和 SHA-256 完整性 |
-| Evaluation | 90 条开发集案例、Provider 无关预测捕获、失败分类和 Keyword/BM25 对照 |
+| Evaluation | 95 条开发集案例、Provider 无关预测捕获、失败分类和 Keyword/BM25 对照 |
 | 模型 | 固定 Revision 的本地 Qwen 默认、OpenAI 可选；GPT-2 不进入 Web Runtime |
 | Web Demo | 本地单进程 Flask 页面，包含 Trace、引用、CSRF、请求限制和安全响应头 |
-| 临床验证 | 未完成；当前 19 条项目摘要均未经临床人员审核 |
+| 临床验证 | 未完成；当前 24 条项目摘要均未经临床人员审核 |
 | 生产部署 | 不支持；尚无认证授权、分布式控制、加密持久化和合规体系 |
 
 ## 用户与 Agent 流程
@@ -89,7 +89,7 @@ Runtime 和 Evaluation 协议按照可复用方向设计，但在第二个产品
 ## 实测结果与限制
 
 下表是最后一次完整的 Qwen 端到端结果，使用数据集 v1.0.0 和此前的三文档语料。
-它是历史工程回归结果，不代表当前 17 文档语料的性能，也不是独立 Benchmark 或
+它是历史工程回归结果，不代表当前 24 文档语料的性能，也不是独立 Benchmark 或
 临床性能结论。
 
 | 指标 | Keyword 基线 | BM25 候选 |
@@ -107,9 +107,9 @@ ID 存在，不能证明 Claim-level Entailment 或回答 Groundedness。晋级�
 [RAG V2](docs/rag-v2-experiment.md) 与
 [Evaluation MVP](docs/evaluation-mvp.md)。第一批六文档、无模型调用的组件回放作为
 历史里程碑保存在 [Corpus v1 第一批审计](docs/corpus-v1-batch-1.md)：Keyword 与
-BM25 的 Recall@3 分别为 64% 和 72%，No-hit Accuracy 均为 90%。当前 17 文档的
-组件回放记录在 [Corpus v1 第四批审计](docs/corpus-v1-batch-4.md)：重新校准 BM25
-阈值后，Keyword 与 BM25 的 Recall@3 均为 73.5%，No-hit Accuracy 均为 89.7%。
+BM25 的 Recall@3 分别为 64% 和 72%，No-hit Accuracy 均为 90%。冻结后的 24 文档
+组件回放记录在 [Corpus v1 最终批次](docs/corpus-v1-final-batch.md)：Keyword 的
+Recall@3 为 78.86%，BM25 为 76.42%，两者 No-hit Accuracy 均为 89.66%。
 
 ## 我的工作、继承内容与已移除内容
 
@@ -196,16 +196,16 @@ flask --app app run
 
 ## 受控证据与数据策略
 
-当前语料包含 19 条项目自行编写的中文摘要，链接 CDC、NHS、WHO、国家卫生健康委和国家药监局，
+冻结后的 Corpus v1 包含 24 条项目自行编写的中文摘要，链接 CDC、NHS、WHO、国家卫生健康委和国家药监局，
 并明确标记为
 **未经临床人员审核**。运行时会拒绝未知或冒充来源、过期复核、未来日期、不安全
 URL、重复 ID、超长内容和哈希不一致记录。
 
 版本化的 [Corpus v1 覆盖规范](docs/corpus-v1-coverage-spec.md)已经定义 8 个主题群和
-24 条记录目标；自动报告会显示当前 19/24 条记录以及每个剩余缺口。神经系统危险
-信号、心血管危险信号、胃肠道症状、呼吸系统症状、发热与感染、过敏与用药安全均已达到文档数与
-多来源门槛。[第五批审计记录](docs/corpus-v1-batch-5.md)说明了来源筛选、标签变化和
-检索回归结果。Paraphrase、Hard Negative、No-hit 和
+24 条记录目标；目前 24 条记录和 8 个主题群已全部达到文档数与多来源门槛。
+[最终批次审计](docs/corpus-v1-final-batch.md)记录了来源筛选、标签变化、检索回归和
+冻结发布合同；[`corpus_release_v1.json`](knowledge/corpus_release_v1.json)用 SHA-256
+绑定精确语料、治理文件和开发集切分。Paraphrase、Hard Negative、No-hit 和
 地区差异属于评测现象，不是证据文档类型。增加文档本身
 不构成可靠性结论。
 [`curate-health-evidence`](skills/curate-health-evidence/) Skill 可以自动执行确定性
@@ -248,18 +248,17 @@ tests/                           自动化回归与安全测试
 - Corpus v1 审计：[第一批](docs/corpus-v1-batch-1.md)、
   [第二批](docs/corpus-v1-batch-2.md)、
   [第三批](docs/corpus-v1-batch-3.md)、
-  [第四批](docs/corpus-v1-batch-4.md)与
-  [第五批](docs/corpus-v1-batch-5.md)
+  [第四批](docs/corpus-v1-batch-4.md)、
+  [第五批](docs/corpus-v1-batch-5.md)与
+  [最终批次](docs/corpus-v1-final-batch.md)
 
 ## 下一阶段
 
-1. 按照已完成的 Coverage Contract 扩充受控语料，只有全部 24 条记录通过准入门槛
-   后才冻结 `health_corpus_v1`。
-2. 创建作者隔离的盲测 Holdout，使用相同 Planner Decision 做 Keyword/BM25 配对回放。
-3. 人工审核 20–30 个代表回答，标注 Citation Entailment、Claim Groundedness、
+1. 创建作者隔离的盲测 Holdout，使用相同 Planner Decision 做 Keyword/BM25 配对回放。
+2. 人工审核 20–30 个代表回答，标注 Citation Entailment、Claim Groundedness、
    Unsupported Claim Rate 和 Usefulness。
-4. LLM Judge 只作为校准后的辅助指标，不作为唯一安全门槛。
-5. 建立招聘者可快速阅读的 Evaluation Dashboard 和演示视频。
+3. LLM Judge 只作为校准后的辅助指标，不作为唯一安全门槛。
+4. 建立招聘者可快速阅读的 Evaluation Dashboard 和演示视频。
 
 在这些证据缺口关闭之前，Embedding、Hybrid Retrieval、更多工具和更高自主性继续
 延后。

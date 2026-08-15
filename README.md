@@ -43,10 +43,10 @@ product constraints:
 | Bounded agent | One plan/tool/respond cycle with validated action/reason pairs and one read-only evidence tool |
 | Conversation | Bounded in-memory follow-up context and an explicit reset action |
 | Governed RAG | Versioned coverage contract, controlled topic clusters, approved-source registry, URL-host binding, review dates, corpus bounds, and SHA-256 integrity |
-| Evaluation | 90-case development set, provider-neutral capture, failure taxonomy, and Keyword/BM25 comparison |
+| Evaluation | 95-case development set, provider-neutral capture, failure taxonomy, and Keyword/BM25 comparison |
 | Model providers | Pinned local Qwen default and optional OpenAI; GPT-2 is excluded from the web runtime |
 | Web demo | Local/single-process Flask interface with trace, citations, CSRF, request limits, and security headers |
-| Clinical validation | Not completed; all 19 project-authored summaries remain unverified by a clinician |
+| Clinical validation | Not completed; all 24 project-authored summaries remain unverified by a clinician |
 | Production deployment | Not supported; authentication, distributed controls, encrypted persistence, and compliance work are absent |
 
 ## User and agent flow
@@ -98,7 +98,7 @@ and human review.
 
 The table below is the last completed end-to-end Qwen run, captured on dataset
 v1.0.0 and the earlier three-record corpus. It is a historical engineering
-regression result, not a current 19-record estimate, independent benchmark,
+regression result, not a current 24-record estimate, independent benchmark,
 or clinical-performance claim.
 
 | Measurement | Keyword baseline | BM25 candidate |
@@ -119,10 +119,10 @@ See [Evaluation v1](docs/evaluation-v1.md),
 [Evaluation MVP](docs/evaluation-mvp.md). The six-record Batch 1, model-free
 component replay is preserved as a historical milestone in
 [Corpus v1 Batch 1](docs/corpus-v1-batch-1.md): Keyword and BM25 achieved 64%
-and 72% Recall@3 respectively while both held 90% no-hit accuracy. The current
-19-record component replay is recorded in
-[Corpus v1 Batch 5](docs/corpus-v1-batch-5.md): Keyword and BM25 both achieved
-75.0% Recall@3 and 89.7% no-hit accuracy after the BM25 threshold was retuned.
+and 72% Recall@3 respectively while both held 90% no-hit accuracy. The frozen
+24-record component replay is recorded in the
+[Corpus v1 Final Batch](docs/corpus-v1-final-batch.md): Keyword achieved 78.86%
+Recall@3 and BM25 achieved 76.42%, while both held 89.66% no-hit accuracy.
 
 ## What I owned, inherited, and removed
 
@@ -222,19 +222,19 @@ compliance certification. See [SECURITY.md](SECURITY.md).
 
 ## Governed evidence and data strategy
 
-The current corpus contains 19 project-authored Chinese summaries linked to
+The frozen Corpus v1 contains 24 project-authored Chinese summaries linked to
 CDC, NHS, WHO, NHC, and NMPA pages. They are explicitly **not
 clinician-reviewed**. Runtime loading rejects unknown or impersonated sources,
 stale reviews, future dates, unsafe URLs, duplicate IDs, oversized records, and
 content/hash mismatches.
 
 The versioned [Corpus v1 coverage specification](docs/corpus-v1-coverage-spec.md)
-now defines 8 topic clusters and a 24-record target. The automated report shows
-the current 19/24 records and every remaining cluster gap. The neurological,
-cardiovascular, gastrointestinal, respiratory, fever/infection, and allergy/
-medication-safety clusters meet both targets. The
-[Batch 5 audit](docs/corpus-v1-batch-5.md) records the source
-decisions, label changes, and retrieval regression results.
+defines 8 topic clusters and a 24-record target. All 24 records and all 8
+clusters now meet the declared document and source-diversity gates. The
+[final-batch audit](docs/corpus-v1-final-batch.md) records source decisions,
+label changes, retrieval regression results, and the frozen release contract;
+[`corpus_release_v1.json`](knowledge/corpus_release_v1.json) binds the exact
+artifacts and development split with SHA-256 hashes.
 Paraphrases, hard
 negatives, no-hit prompts, and jurisdiction differences are evaluation
 phenomena rather than evidence-document types. Adding more documents alone is
@@ -281,20 +281,19 @@ tests/                           Automated regression and security tests
 - Corpus v1 audits: [Batch 1](docs/corpus-v1-batch-1.md),
   [Batch 2](docs/corpus-v1-batch-2.md),
   [Batch 3](docs/corpus-v1-batch-3.md),
-  [Batch 4](docs/corpus-v1-batch-4.md), and
-  [Batch 5](docs/corpus-v1-batch-5.md)
+  [Batch 4](docs/corpus-v1-batch-4.md),
+  [Batch 5](docs/corpus-v1-batch-5.md), and the
+  [Final Batch](docs/corpus-v1-final-batch.md)
 
 ## Next milestones
 
-1. Expand the governed corpus against the completed coverage contract and
-   freeze `health_corpus_v1` only after all 24 records pass its acceptance gate.
-2. Create an author-separated blind holdout and run paired Keyword/BM25 replay
+1. Create an author-separated blind holdout and run paired Keyword/BM25 replay
    with the same planner decisions.
-3. Human-review 20–30 sampled answers for citation entailment, claim
+2. Human-review 20–30 sampled answers for citation entailment, claim
    groundedness, unsupported-claim rate, and usefulness.
-4. Use an LLM judge only as a calibrated secondary metric, never the sole
+3. Use an LLM judge only as a calibrated secondary metric, never the sole
    safety gate.
-5. Add a recruiter-readable evaluation dashboard and concise walkthrough.
+4. Add a recruiter-readable evaluation dashboard and concise walkthrough.
 
 Embedding, hybrid retrieval, additional tools, and broader autonomy remain
 deferred until these evidence gaps are closed.
