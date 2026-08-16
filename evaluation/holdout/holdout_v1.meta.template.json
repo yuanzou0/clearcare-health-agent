@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "dataset_id": "clearcare_retrieval_holdout_v1",
+  "dataset_version": "1.0.0",
+  "domain": "health",
+  "language": "zh-CN",
+  "case_count": 64,
+  "labels_frozen_at": "YYYY-MM-DD",
+  "authoring_method": "author_separated_synthetic",
+  "reviewer_status": "project_reviewed",
+  "expert_reviewed": false,
+  "contains_personal_data": false,
+  "split_type": "author_separated_blind_holdout",
+  "author_separated": true,
+  "labels_exposure": "sealed_until_system_freeze",
+  "intended_use": [
+    "one-time fixed-parameter Keyword versus BM25 retrieval comparison"
+  ],
+  "not_valid_for": [
+    "threshold tuning",
+    "prompt or corpus tuning",
+    "clinical performance claims",
+    "end-to-end answer quality claims"
+  ]
+}

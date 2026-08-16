@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "protocol_id": "clearcare_retrieval_holdout_v1",
+  "protocol_sha256": "generated-by-script",
+  "dataset_id": "clearcare_retrieval_holdout_v1",
+  "dataset_version": "1.0.0",
+  "case_count": 64,
+  "dataset_sha256": "generated-by-script",
+  "metadata_sha256": "generated-by-script",
+  "committed_at": "generated-by-script",
+  "author_id": "non-identifying-author-id",
+  "author_separated": true,
+  "labels_exposed_to_developer": false,
+  "system_freeze_commit": "a460ddd"
+}

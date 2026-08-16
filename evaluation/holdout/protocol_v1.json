@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "protocol_id": "clearcare_retrieval_holdout_v1",
+  "status": "preregistered",
+  "protocol_frozen_at": "2026-08-16",
+  "system_freeze_commit": "a460ddd",
+  "system_artifacts": {
+    "retrieval_path": "retrieval.py",
+    "retrieval_sha256": "41cddec97fe470c32b71ee1462d944be3e4a70561236c6ea7aa0660a398bbad1"
+  },
+  "corpus": {
+    "corpus_id": "health_corpus_v1",
+    "release_manifest_path": "knowledge/corpus_release_v1.json",
+    "release_manifest_sha256": "bcf499cfba60b4ee09c8ec5b69bc7c891d53b7fbbc1317d37a467b6db5f62745",
+    "corpus_path": "knowledge/medical_guidance.json",
+    "corpus_sha256": "0b0e142ee1047e87b986d4698f7139fe390554380785d134fc64204df5af34c9"
+  },
+  "dataset_requirements": {
+    "case_count": 64,
+    "positive_case_count": 40,
+    "no_hit_case_count": 24,
+    "minimum_positive_cases_per_cluster": 5,
+    "topic_clusters": [
+      "neurological_warning_signs",
+      "cardiovascular_warning_signs",
+      "gastrointestinal_symptoms",
+      "respiratory_symptoms",
+      "fever_and_infection",
+      "allergy_and_medication_safety",
+      "child_health",
+      "mental_health_crisis"
+    ],
+    "minimum_tag_counts": {
+      "paraphrase": 8,
+      "synonym": 8,
+      "hard_negative": 8,
+      "jurisdiction_difference": 8
+    }
+  },
+  "experiment": {
+    "retrieval_k": 3,
+    "baseline": {
+      "strategy": "keyword",
+      "parameters": {}
+    },
+    "candidate": {
+      "strategy": "bm25",
+      "parameters": {
+        "minimum_score": 6.5,
+        "k1": 1.5,
+        "b": 0.75
+      }
+    },
+    "threshold_sweep_allowed": false,
+    "rerun_after_reveal_allowed": false
+  },
+  "promotion_gates": {
+    "minimum_recall_at_3_delta": 0.03,
+    "minimum_paired_bootstrap_ci_lower": 0.0,
+    "minimum_no_hit_accuracy_delta": -0.02,
+    "minimum_hard_negative_accuracy_delta": -0.05,
+    "minimum_cluster_recall_delta": -0.2,
+    "bootstrap_confidence": 0.95,
+    "bootstrap_resamples": 10000,
+    "bootstrap_seed": 20260816
+  },
+  "decision_policy": {
+    "pass": "Promote BM25 only when every preregistered gate passes.",
+    "fail": "Keep Keyword as the production default when any gate fails.",
+    "invalid": "Invalidate the holdout when labels, corpus, system parameters, or analysis rules change after reveal; a new independently authored set is required."
+  }
+}

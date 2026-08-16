@@ -49,7 +49,7 @@ decision follows from the result.**
 - [x] Remove raw legacy datasets and generated artifacts from the current tree.
 - [x] Publish the product case study, security review, Evaluation MVP/v1, and
   Keyword/BM25 experiment.
-- [x] Pass 101 automated regression and security tests as of 2026-08-15.
+- [x] Pass 107 automated regression and security tests as of 2026-08-16.
 
 ## P0 — Corpus v1 before further retrieval architecture
 
@@ -96,19 +96,21 @@ corpus version. Document count alone is not a quality claim.
 - [x] Implement deterministic safety/retrieval checks and provider-neutral
   prediction capture.
 - [x] Capture a complete local-Qwen development run and segmented report.
-- [ ] Pre-register retrieval promotion metrics and guardrail thresholds.
+- [x] Pre-register retrieval promotion metrics and guardrail thresholds.
 - [ ] Ask a separate author/reviewer to create or review unseen cases; if that
   is not possible, call the process “author-separated blind holdout,” not fully
   independent evaluation.
-- [ ] Freeze holdout inputs, labels, reviewer status, hashes, and reveal policy
-  before the final comparison.
-- [ ] Prevent parameter changes after holdout reveal; any retuning requires a
-  new final test set.
+- [ ] Receive the independently authored holdout commitment, then freeze its
+  input/label hashes and reviewer status before first reveal. The commitment,
+  one-time runner, and reveal policy are implemented.
+- [x] Prevent parameter changes and threshold sweeps in the holdout runner;
+  any post-reveal retuning requires a new independently authored test set.
 
 ### 4. Paired Keyword/BM25 replay
 
-- [ ] Tune BM25 only on the development set.
-- [ ] Store or freeze the same planner/retrieval queries for both strategies so
+- [x] Freeze the development-selected BM25 threshold at 6.5; holdout tuning is
+  prohibited.
+- [x] Run the exact same frozen retrieval queries for both strategies so
   planner randomness cannot masquerade as a retrieval gain.
 - [ ] Compare Recall@3, MRR, no-hit accuracy, citation coverage, latency, and
   failure segments on the blind holdout.

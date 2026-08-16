@@ -116,7 +116,10 @@ human-reviewed groundedness results.
 
 See [Evaluation v1](docs/evaluation-v1.md),
 [RAG V2](docs/rag-v2-experiment.md), and the
-[Evaluation MVP](docs/evaluation-mvp.md). The six-record Batch 1, model-free
+[Evaluation MVP](docs/evaluation-mvp.md). The preregistered
+[author-separated blind holdout protocol](docs/author-separated-holdout-protocol.md)
+freezes the next comparison before an independent author creates or reveals
+labels. The six-record Batch 1, model-free
 component replay is preserved as a historical milestone in
 [Corpus v1 Batch 1](docs/corpus-v1-batch-1.md): Keyword and BM25 achieved 64%
 and 72% Recall@3 respectively while both held 90% no-hit accuracy. The frozen
