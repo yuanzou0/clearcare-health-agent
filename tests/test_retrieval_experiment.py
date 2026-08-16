@@ -59,3 +59,18 @@ def test_retrieval_experiment_cli_writes_json_and_markdown(tmp_path):
     assert payload["candidate_count"] == 70
     assert "Compared 2 strategies" in completed.stdout
     assert "BM25 development-set threshold sweep" in markdown
+
+
+def test_holdout_mode_does_not_sweep_bm25_thresholds():
+    cases = load_dataset(DATASET)
+    knowledge_base = LocalKnowledgeBase()
+
+    report = run_retrieval_experiment(
+        cases,
+        knowledge_base.documents,
+        dataset_name="sealed_holdout",
+        include_bm25_threshold_sweep=False,
+    )
+
+    assert report.bm25_threshold_sweep == ()
+    assert "development-set threshold sweep" not in report.to_markdown()

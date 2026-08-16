@@ -252,6 +252,7 @@ def run_retrieval_experiment(
     dataset_name: str,
     strategies: Sequence[str] = ("keyword", "bm25"),
     retrieval_k: int = 3,
+    include_bm25_threshold_sweep: bool = True,
 ) -> RetrievalExperimentReport:
     """Run isolated retrieval comparison on non-emergency retrieval cases."""
     eligible = tuple(
@@ -269,7 +270,7 @@ def run_retrieval_experiment(
         )
 
     threshold_sweep: list[dict[str, float]] = []
-    if "bm25" in strategies:
+    if "bm25" in strategies and include_bm25_threshold_sweep:
         from retrieval import BM25Retriever
 
         for minimum_score in (
