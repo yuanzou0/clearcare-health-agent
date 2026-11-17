@@ -105,7 +105,9 @@ ID 存在，不能证明 Claim-level Entailment 或回答 Groundedness。晋级�
 
 详见 [Evaluation v1](docs/evaluation-v1.md)、
 [RAG V2](docs/rag-v2-experiment.md) 与
-[Evaluation MVP](docs/evaluation-mvp.md)。第一批六文档、无模型调用的组件回放作为
+[Evaluation MVP](docs/evaluation-mvp.md)。下一次对照已经通过
+[作者隔离盲测协议](docs/author-separated-holdout-protocol.md)预先冻结；真正的案例与
+标签必须由另一位作者在隔离环境完成后才能揭盲。第一批六文档、无模型调用的组件回放作为
 历史里程碑保存在 [Corpus v1 第一批审计](docs/corpus-v1-batch-1.md)：Keyword 与
 BM25 的 Recall@3 分别为 64% 和 72%，No-hit Accuracy 均为 90%。冻结后的 24 文档
 组件回放记录在 [Corpus v1 最终批次](docs/corpus-v1-final-batch.md)：Keyword 的

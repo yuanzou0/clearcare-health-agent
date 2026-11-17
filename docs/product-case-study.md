@@ -167,7 +167,7 @@ them.
 
 As of 2026-08-15:
 
-- 101 automated code, evaluation, security, and Skill tests pass.
+- 107 automated code, evaluation, security, and Skill tests pass.
 - The corpus validator accepts a frozen 24-record release from 5 approved sources.
 - All 24 records are project-authored Chinese summaries marked as not reviewed
   by a clinician.
