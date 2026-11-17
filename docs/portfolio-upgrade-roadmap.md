@@ -49,7 +49,7 @@ decision follows from the result.**
 - [x] Remove raw legacy datasets and generated artifacts from the current tree.
 - [x] Publish the product case study, security review, Evaluation MVP/v1, and
   Keyword/BM25 experiment.
-- [x] Pass 98 automated regression and security tests as of 2026-08-15.
+- [x] Pass 101 automated regression and security tests as of 2026-08-15.
 
 ## P0 — Corpus v1 before further retrieval architecture
 
@@ -69,18 +69,20 @@ Coverage design is now versioned in
 [`knowledge/coverage_plan.json`](../knowledge/coverage_plan.json) and explained
 in the bilingual
 [`Health Corpus v1 Coverage Specification`](corpus-v1-coverage-spec.md). The
-live report shows 19/24 records and a 5-record gap; this does not mark Corpus v1
-as frozen.
+live report now shows 24/24 records, 8/8 clusters at target, and a frozen
+release contract with exact hashes. This is a reproducibility milestone, not a
+clinical-validation claim.
 
 ### 2. Governed corpus expansion
 
-- [ ] Expand from 19 summaries to roughly 20–30 governed documents because the
-  current corpus is too small for a credible retrieval comparison.
-- [ ] Add stable document/chunk IDs, parent-document metadata, applicability,
+- [x] Expand from 19 summaries to 24 governed documents against named coverage
+  gaps and source-diversity requirements.
+- [x] Add stable document IDs, applicability,
   version, review owner/status, and content hashes.
-- [ ] Run the evidence Skill, corpus validation, coverage report, duplicate
+- [x] Run the evidence Skill, corpus validation, coverage report, duplicate
   detection, and stale-review checks.
-- [ ] Freeze `health_corpus_v1` with a manifest hash and release date.
+- [x] Freeze `health_corpus_v1` with artifact hashes, the exact development
+  split, known gaps, and a release date.
 
 **Definition of done:** each document fills a named coverage gap, passes
 governance validation, has traceable reuse metadata, and belongs to a frozen
@@ -116,11 +118,10 @@ corpus version. Document count alone is not a quality claim.
 proxy from 72.5% to 78.75%, but Keyword remains the default because the result
 has not passed a blind holdout.
 
-After Corpus v1 Batch 5, the 19-document component replay required retuning the
-BM25 development threshold from 5.5 to 6.5. At that threshold both BM25 and
-Keyword achieved 75.0% Recall@3 and 89.7% no-hit accuracy. BM25 retained a
-broad-allergy false hit and did not improve recall, so Keyword remains the default. This
-does not complete the paired blind-holdout task or change the production default.
+The frozen 24-document component replay keeps the previously selected BM25
+development threshold of 6.5. Keyword achieved 78.86% Recall@3 and BM25
+76.42%; both achieved 89.66% no-hit accuracy. Keyword therefore remains the
+default. This does not complete the paired blind-holdout task.
 
 ## P0 — Claim-level groundedness
 
@@ -205,7 +206,7 @@ inputs, owners, or compliance gates.
 | Dates | Milestone | Deliverable / acceptance signal |
 |---|---|---|
 | Aug 14–20 | Brand, ownership, corpus design | Vertical-first README, ownership boundary, coverage specification |
-| Aug 21–Sep 3 | Governed corpus v1 | 20–30 reviewed records, coverage report, frozen manifest/hash |
+| Aug 21–Sep 3 | Governed corpus v1 | ~~24 governed records, coverage report, frozen manifest/hash~~ Completed 2026-08-15 |
 | Sep 4–10 | Blind holdout | Frozen unseen cases, preregistered gates, paired Keyword/BM25 replay |
 | Sep 11–17 | Groundedness | Human-reviewed claims, entailment and unsupported-claim report |
 | Sep 18–24 | Analytics | Evaluation dashboard and segmented product recommendation |

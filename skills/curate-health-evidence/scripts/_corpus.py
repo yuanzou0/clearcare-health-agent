@@ -53,6 +53,19 @@ COVERAGE_CLUSTER_FIELDS = {
     "preferred_jurisdictions",
 }
 
+RELEASE_FIELDS = {
+    "schema_version",
+    "corpus_id",
+    "corpus_status",
+    "release_date",
+    "document_count",
+    "review_status",
+    "evidence_grade",
+    "artifacts",
+    "evaluation_split",
+    "known_gaps",
+}
+
 
 @dataclass(frozen=True)
 class ValidationResult:
@@ -73,6 +86,10 @@ def knowledge_paths(project: Path) -> tuple[Path, Path]:
 
 def coverage_plan_path(project: Path) -> Path:
     return project.resolve() / "knowledge" / "coverage_plan.json"
+
+
+def release_manifest_path(project: Path) -> Path:
+    return project.resolve() / "knowledge" / "corpus_release_v1.json"
 
 
 def load_corpus(project: Path) -> tuple[list[dict], dict]:
@@ -98,6 +115,150 @@ def load_coverage_plan(project: Path) -> dict:
 
 def content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
+
+
+def file_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for block in iter(lambda: file.read(65536), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _project_file(project: Path, relative_path: object) -> Path | None:
+    if not isinstance(relative_path, str) or not relative_path.strip():
+        return None
+    root = project.resolve()
+    candidate = (root / relative_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError:
+        return None
+    return candidate
+
+
+def _validate_release_manifest(
+    project: Path,
+    records: list[dict],
+    coverage_plan: dict,
+    errors: list[str],
+) -> None:
+    path = release_manifest_path(project)
+    if not path.is_file():
+        errors.append("release_manifest: frozen corpus requires corpus_release_v1.json")
+        return
+    try:
+        release = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(f"release_manifest: cannot load: {exc}")
+        return
+    if not isinstance(release, dict):
+        errors.append("release_manifest: expected an object")
+        return
+    missing = RELEASE_FIELDS - release.keys()
+    if missing:
+        errors.append(f"release_manifest: missing {', '.join(sorted(missing))}")
+    if release.get("schema_version") != 1:
+        errors.append("release_manifest: unsupported or missing schema_version")
+    if release.get("corpus_id") != coverage_plan.get("corpus_id"):
+        errors.append("release_manifest: corpus_id does not match coverage plan")
+    if release.get("corpus_status") != "frozen":
+        errors.append("release_manifest: corpus_status must be 'frozen'")
+    if release.get("document_count") != len(records):
+        errors.append("release_manifest: document_count does not match corpus")
+    _iso_date(release.get("release_date"), "release_manifest.release_date", errors)
+    if release.get("review_status") != coverage_plan.get("required_review_status"):
+        errors.append("release_manifest: review_status does not match coverage plan")
+    if release.get("evidence_grade") != "not_assessed":
+        errors.append("release_manifest: evidence_grade must remain 'not_assessed'")
+    gaps = release.get("known_gaps")
+    if not isinstance(gaps, list) or not gaps or not all(
+        isinstance(gap, str) and gap.strip() for gap in gaps
+    ):
+        errors.append("release_manifest: known_gaps must be a non-empty string list")
+
+    expected_artifacts = {
+        "corpus": "knowledge/medical_guidance.json",
+        "source_manifest": "knowledge/source_manifest.json",
+        "coverage_plan": "knowledge/coverage_plan.json",
+    }
+    artifacts = release.get("artifacts")
+    if not isinstance(artifacts, dict):
+        errors.append("release_manifest: artifacts must be an object")
+    else:
+        for label, expected_path in expected_artifacts.items():
+            artifact = artifacts.get(label)
+            if not isinstance(artifact, dict):
+                errors.append(f"release_manifest.artifacts.{label}: expected an object")
+                continue
+            if artifact.get("path") != expected_path:
+                errors.append(
+                    f"release_manifest.artifacts.{label}: unexpected path"
+                )
+                continue
+            artifact_path = _project_file(project, artifact.get("path"))
+            if not artifact_path or not artifact_path.is_file():
+                errors.append(
+                    f"release_manifest.artifacts.{label}: file does not exist"
+                )
+            elif artifact.get("sha256") != file_hash(artifact_path):
+                errors.append(
+                    f"release_manifest.artifacts.{label}: sha256 mismatch"
+                )
+
+    split = release.get("evaluation_split")
+    if not isinstance(split, dict):
+        errors.append("release_manifest: evaluation_split must be an object")
+    else:
+        required = {
+            "dataset_id",
+            "dataset_version",
+            "case_count",
+            "path",
+            "sha256",
+            "metadata_path",
+            "metadata_sha256",
+        }
+        missing_split = required - split.keys()
+        if missing_split:
+            errors.append(
+                "release_manifest.evaluation_split: missing "
+                + ", ".join(sorted(missing_split))
+            )
+        split_path = _project_file(project, split.get("path"))
+        if not split_path or not split_path.is_file():
+            errors.append("release_manifest.evaluation_split: file does not exist")
+        elif split.get("sha256") != file_hash(split_path):
+            errors.append("release_manifest.evaluation_split: sha256 mismatch")
+        meta_path = _project_file(project, split.get("metadata_path"))
+        expected_meta_path = (
+            split_path.with_suffix(".meta.json") if split_path else None
+        )
+        if expected_meta_path and meta_path != expected_meta_path:
+            errors.append("release_manifest.evaluation_split: unexpected metadata_path")
+        if meta_path and meta_path.is_file():
+            if split.get("metadata_sha256") != file_hash(meta_path):
+                errors.append(
+                    "release_manifest.evaluation_split: metadata_sha256 mismatch"
+                )
+            try:
+                meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                errors.append(
+                    "release_manifest.evaluation_split: cannot load metadata: "
+                    f"{exc}"
+                )
+            else:
+                for field in ("dataset_id", "dataset_version", "case_count"):
+                    if split.get(field) != meta.get(field):
+                        errors.append(
+                            "release_manifest.evaluation_split: "
+                            f"{field} does not match metadata"
+                        )
+        else:
+            errors.append(
+                "release_manifest.evaluation_split: metadata file does not exist"
+            )
 
 
 def _https_host(value: str) -> str | None:
@@ -386,7 +547,17 @@ def validate_payload(
 def validate_project(project: Path) -> ValidationResult:
     records, manifest = load_corpus(project)
     coverage_plan = load_coverage_plan(project)
-    return validate_payload(records, manifest, coverage_plan=coverage_plan)
+    result = validate_payload(records, manifest, coverage_plan=coverage_plan)
+    errors = list(result.errors)
+    if coverage_plan.get("status") == "frozen":
+        _validate_release_manifest(project, records, coverage_plan, errors)
+    return ValidationResult(
+        tuple(errors),
+        result.warnings,
+        result.records,
+        result.manifest,
+        result.coverage_plan,
+    )
 
 
 def write_records(project: Path, records: list[dict]) -> None:

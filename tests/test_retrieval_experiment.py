@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from evaluation import load_dataset
 from evaluation.retrieval_experiment import run_retrieval_experiment
 from knowledge import LocalKnowledgeBase
@@ -22,12 +24,12 @@ def test_retrieval_experiment_compares_same_frozen_cases():
         dataset_name="health_mvp_v1",
     )
 
-    assert report.candidate_count == 65
-    assert report.relevant_case_count == 36
+    assert report.candidate_count == 70
+    assert report.relevant_case_count == 41
     assert report.no_hit_case_count == 29
     results = {result.strategy: result for result in report.strategies}
-    assert results["keyword"].metrics["recall_at_k"] == 0.75
-    assert results["bm25"].metrics["recall_at_k"] == 0.75
+    assert results["keyword"].metrics["recall_at_k"] == pytest.approx(0.7886, abs=1e-4)
+    assert results["bm25"].metrics["recall_at_k"] == pytest.approx(0.7642, abs=1e-4)
     assert (
         results["bm25"].metrics["no_hit_accuracy"]
         >= results["keyword"].metrics["no_hit_accuracy"]
@@ -54,6 +56,6 @@ def test_retrieval_experiment_cli_writes_json_and_markdown(tmp_path):
 
     payload = json.loads((tmp_path / "retrieval_experiment.json").read_text())
     markdown = (tmp_path / "retrieval_experiment.md").read_text()
-    assert payload["candidate_count"] == 65
+    assert payload["candidate_count"] == 70
     assert "Compared 2 strategies" in completed.stdout
     assert "BM25 development-set threshold sweep" in markdown

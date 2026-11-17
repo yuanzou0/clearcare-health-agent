@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "corpus_id": "health_corpus_v1",
+  "corpus_status": "frozen",
+  "release_date": "2026-08-15",
+  "document_count": 24,
+  "review_status": "project_summary_unverified_by_clinician",
+  "evidence_grade": "not_assessed",
+  "artifacts": {
+    "corpus": {
+      "path": "knowledge/medical_guidance.json",
+      "sha256": "0b0e142ee1047e87b986d4698f7139fe390554380785d134fc64204df5af34c9"
+    },
+    "source_manifest": {
+      "path": "knowledge/source_manifest.json",
+      "sha256": "acdbc6c94155b695308aee2f7e753ae7deb6e887004c3c314b75776ed281c5d7"
+    },
+    "coverage_plan": {
+      "path": "knowledge/coverage_plan.json",
+      "sha256": "0e0ebcb9055b7d3b976f2a95b1e9f79c11ad94de2571003a2e62a9cce89129f9"
+    }
+  },
+  "evaluation_split": {
+    "dataset_id": "health_mvp",
+    "dataset_version": "1.6.0",
+    "case_count": 95,
+    "path": "evaluation/datasets/health_mvp_v1.jsonl",
+    "sha256": "0b7d94b105255a4420671aa1dbc879a57e07faa06bbc6e839a3cfcedbf670b0d",
+    "metadata_path": "evaluation/datasets/health_mvp_v1.meta.json",
+    "metadata_sha256": "83fef32867b61ab3a9a59b0d005626b4b73175941fd81bafccc0a97bd72956e0"
+  },
+  "known_gaps": [
+    "All Chinese summaries are project-authored and have not been reviewed by a qualified clinician.",
+    "Evidence quality has not been graded; every record remains not_assessed.",
+    "Evaluation cases are synthetic, project-reviewed development labels rather than an independent clinical benchmark.",
+    "Claim-level groundedness, citation entailment, and human usefulness are not yet measured by qualified reviewers.",
+    "The NMPA host returned HTTP 412 to automated review; the selected child-cosmetics page was cross-checked through an official Shanghai regulator reproduction.",
+    "The corpus is intentionally narrow general-information coverage and is not medically comprehensive."
+  ]
+}

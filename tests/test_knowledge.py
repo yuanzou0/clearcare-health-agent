@@ -134,7 +134,7 @@ def test_knowledge_loader_rejects_stale_review(tmp_path):
 def test_production_knowledge_has_governance_metadata():
     knowledge_base = LocalKnowledgeBase()
 
-    assert len(knowledge_base.documents) == 19
+    assert len(knowledge_base.documents) == 24
     assert all(document.document_id for document in knowledge_base.documents)
     assert all(document.last_reviewed_at for document in knowledge_base.documents)
     assert all(document.review_status for document in knowledge_base.documents)
@@ -251,6 +251,31 @@ def test_batch_5_retrieves_medication_label_and_anaphylaxis_guidance(strategy):
             "nmpa-ganmaoling-label-safety-2026-08-review",
         "接触药物后喉咙和舌头突然肿胀、呼吸困难，有哪些严重过敏警示资料":
             "nhs-anaphylaxis-warning-signs-2026-08-review",
+    }
+
+    for query, expected_document_id in queries.items():
+        returned_ids = {
+            document.document_id for document in knowledge_base.search(query, limit=3)
+        }
+        assert expected_document_id in returned_ids
+
+    assert knowledge_base.search("如何修复 Python 单元测试", limit=3) == []
+
+
+@pytest.mark.parametrize("strategy", ["keyword", "bm25"])
+def test_final_batch_retrieves_child_and_mental_health_guidance(strategy):
+    knowledge_base = LocalKnowledgeBase(strategy=strategy)
+    queries = {
+        "国家药监局说儿童化妆品的小金盾代表什么，购买和试用要注意什么":
+            "nmpa-child-cosmetics-safety-2026-08-review",
+        "WHO 对五岁以下孩子喂养困难、活动减少或抽搐有哪些危险信号建议":
+            "who-child-mortality-warning-signs-2026-08-review",
+        "NHS 关于婴幼儿难以唤醒、绿色呕吐和尿布变干有哪些严重不适提示":
+            "nhs-baby-toddler-serious-illness-2026-08-review",
+        "WHO 对抑郁、绝望和自杀想法有哪些危机求助建议":
+            "who-depression-crisis-guidance-2026-08-review",
+        "NHS 对心理健康危机、幻觉或妄想需要怎样的紧急支持":
+            "nhs-urgent-mental-health-support-2026-08-review",
     }
 
     for query, expected_document_id in queries.items():

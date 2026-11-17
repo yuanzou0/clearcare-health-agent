@@ -19,9 +19,14 @@ def run_script(name, *args):
     )
 
 
-def temporary_project(tmp_path):
+def temporary_project(tmp_path, *, planning=False):
     project = tmp_path / "project"
     shutil.copytree(PROJECT_ROOT / "knowledge", project / "knowledge")
+    if planning:
+        plan_path = project / "knowledge" / "coverage_plan.json"
+        plan = json.loads(plan_path.read_text(encoding="utf-8"))
+        plan["status"] = "planning"
+        plan_path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
     return project
 
 
@@ -54,25 +59,27 @@ def test_skill_validator_and_coverage_report_run_on_project():
     coverage = run_script("coverage_report.py", "--project", PROJECT_ROOT)
 
     assert validation.returncode == 0
-    assert "Checked 19 documents from 5 approved sources" in validation.stdout
+    assert "Checked 24 documents from 5 approved sources" in validation.stdout
     assert coverage.returncode == 0
     assert "Corpus ID: health_corpus_v1" in coverage.stdout
-    assert "Status: planning" in coverage.stdout
-    assert "Documents: 19 / 24" in coverage.stdout
-    assert "Remaining document gap: 5" in coverage.stdout
-    assert "Clusters at document target: 6 / 8" in coverage.stdout
-    assert "Clusters at source minimum: 6 / 8" in coverage.stdout
+    assert "Status: frozen" in coverage.stdout
+    assert "Documents: 24 / 24" in coverage.stdout
+    assert "Remaining document gap: 0" in coverage.stdout
+    assert "Clusters at document target: 8 / 8" in coverage.stdout
+    assert "Clusters at source minimum: 8 / 8" in coverage.stdout
     assert "| gastrointestinal_symptoms | 3 | 3 | 0 | 3 |" in coverage.stdout
     assert "| respiratory_symptoms | 3 | 3 | 0 | 3 |" in coverage.stdout
     assert "| fever_and_infection | 3 | 3 | 0 | 3 |" in coverage.stdout
     assert "| neurological_warning_signs | 3 | 3 | 0 | 3 |" in coverage.stdout
     assert "| cardiovascular_warning_signs | 3 | 3 | 0 | 3 |" in coverage.stdout
     assert "| allergy_and_medication_safety | 3 | 3 | 0 | 3 |" in coverage.stdout
+    assert "| child_health | 3 | 3 | 0 | 3 |" in coverage.stdout
+    assert "| mental_health_crisis | 3 | 3 | 0 | 2 |" in coverage.stdout
     assert "project_summary_unverified_by_clinician" in coverage.stdout
 
 
 def test_add_evidence_checks_without_writing_then_applies(tmp_path):
-    project = temporary_project(tmp_path)
+    project = temporary_project(tmp_path, planning=True)
     records_path = project / "knowledge" / "medical_guidance.json"
     before = records_path.read_text(encoding="utf-8")
     candidate = tmp_path / "candidate.json"
@@ -108,7 +115,7 @@ def test_add_evidence_checks_without_writing_then_applies(tmp_path):
 
 
 def test_add_evidence_rejects_unknown_source(tmp_path):
-    project = temporary_project(tmp_path)
+    project = temporary_project(tmp_path, planning=True)
     record = candidate_record()
     record["source_id"] = "unapproved-source"
     candidate = tmp_path / "candidate.json"
@@ -123,7 +130,7 @@ def test_add_evidence_rejects_unknown_source(tmp_path):
 
 
 def test_add_evidence_rejects_approved_id_with_unapproved_host(tmp_path):
-    project = temporary_project(tmp_path)
+    project = temporary_project(tmp_path, planning=True)
     record = candidate_record()
     record["source_url"] = "https://www.cdc.gov.attacker.example/topic"
     candidate = tmp_path / "candidate.json"
@@ -138,7 +145,7 @@ def test_add_evidence_rejects_approved_id_with_unapproved_host(tmp_path):
 
 
 def test_add_evidence_rejects_unknown_topic_cluster(tmp_path):
-    project = temporary_project(tmp_path)
+    project = temporary_project(tmp_path, planning=True)
     record = candidate_record()
     record["topic_cluster"] = "invented_cluster"
     candidate = tmp_path / "candidate.json"
@@ -165,14 +172,24 @@ def test_validator_rejects_coverage_target_mismatch(tmp_path):
     assert "target_document_count does not match cluster targets" in result.stdout
 
 
-def test_validator_rejects_premature_corpus_freeze(tmp_path):
+def test_validator_requires_release_manifest_for_frozen_corpus(tmp_path):
     project = temporary_project(tmp_path)
-    plan_path = project / "knowledge" / "coverage_plan.json"
-    plan = json.loads(plan_path.read_text(encoding="utf-8"))
-    plan["status"] = "frozen"
-    plan_path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    (project / "knowledge" / "corpus_release_v1.json").unlink()
 
     result = run_script("validate_corpus.py", "--project", project)
 
     assert result.returncode == 1
-    assert "frozen corpus document count does not match target" in result.stdout
+    assert "frozen corpus requires corpus_release_v1.json" in result.stdout
+
+
+def test_validator_rejects_release_artifact_hash_mismatch(tmp_path):
+    project = temporary_project(tmp_path)
+    release_path = project / "knowledge" / "corpus_release_v1.json"
+    release = json.loads(release_path.read_text(encoding="utf-8"))
+    release["artifacts"]["corpus"]["sha256"] = "0" * 64
+    release_path.write_text(json.dumps(release, ensure_ascii=False), encoding="utf-8")
+
+    result = run_script("validate_corpus.py", "--project", project)
+
+    assert result.returncode == 1
+    assert "artifacts.corpus: sha256 mismatch" in result.stdout
